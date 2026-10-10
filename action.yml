@@ -1,0 +1,45 @@
+name: 'WP Release Checksums'
+description: 'Write the MD5 and SHA-256 hashes of every distributed file of a WordPress plugin or theme to a checksums manifest.'
+author: 'WP Elevator'
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  source-dir:
+    description: 'Directory to hash. Defaults to the repository root.'
+    default: ''
+  slug:
+    description: 'Plugin or theme slug.'
+    default: ${{ github.event.repository.name }}
+  version:
+    description: 'Version for the manifest and its filename. Defaults to the Version header.'
+    default: ''
+  filename-format:
+    description: 'Filename with {slug} and {version}, followed by .checksums.json. Defaults to {slug}.{version}.'
+    default: ''
+  output:
+    description: 'Path of the manifest. Defaults to the filename in the repository root.'
+    default: ''
+  distignore:
+    description: 'Path to the ignore file, or "false" to not read one. Defaults to .distignore in source-dir when present.'
+    default: ''
+  exclude:
+    description: 'Extra gitignore-style patterns to leave out, separated by commas or new lines, like "build/,assets/*,images/**/*".'
+    default: ''
+  type:
+    description: 'plugin or theme. Defaults to the type detected from the headers, else plugin.'
+    default: ''
+  force:
+    description: 'Overwrite an existing manifest.'
+    default: 'false'
+
+outputs:
+  checksums-path:
+    description: 'Absolute path of the checksums manifest.'
+  files:
+    description: 'Number of hashed files.'
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js'
