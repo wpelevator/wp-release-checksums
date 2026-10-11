@@ -12,7 +12,7 @@ The manifest lists the MD5 and SHA-256 hash of every distributed file in the for
 
 ```yaml
       - id: checksums
-        uses: wpelevator/wp-release-checksums@0.1.0
+        uses: wpelevator/wp-release-checksums@0.2.0
         with:
           source-dir: dist
 ```
@@ -22,17 +22,17 @@ The manifest lists the MD5 and SHA-256 hash of every distributed file in the for
 To ship the signed manifest inside the plugin, so that an installed copy can be verified later, write it into the directory that is zipped and deployed, sign it, and then zip and deploy that directory:
 
 ```yaml
-      - uses: wpelevator/wp-release-checksums@0.1.0
+      - uses: wpelevator/wp-release-checksums@0.2.0
         with:
           source-dir: dist
           output: dist/checksums.json
 
-      - uses: wpelevator/wp-release-sign@0.1.0
+      - uses: wpelevator/wp-release-sign@0.2.0
         with:
           files: dist/checksums.json
           signing-key: ${{ secrets.WP_RELEASE_SIGNING_KEY }}
 
-      - uses: wpelevator/wp-release-zip@0.1.0
+      - uses: wpelevator/wp-release-zip@0.2.0
         with:
           source-dir: dist # Without the checksums input, which would write a second manifest.
 ```
@@ -59,6 +59,10 @@ The manifest doesn't list itself or its `.sig`, and `output` can be any path ins
 |---|---|
 | `checksums-path` | Absolute path of the checksums manifest. |
 | `files` | Number of hashed files. |
+
+## Job summary
+
+Each run adds a section to the job summary of the run with the manifest and its number of files. A failed run adds its error instead, and the run fails. The paths are relative to the workspace.
 
 ## Without the action
 
