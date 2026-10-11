@@ -11100,7 +11100,7 @@ var require_mock_interceptor = __commonJS({
 var require_mock_client = __commonJS({
   "../../../node_modules/undici/lib/mock/mock-client.js"(exports, module) {
     "use strict";
-    var { promisify: promisify3 } = __require("node:util");
+    var { promisify: promisify2 } = __require("node:util");
     var Client = require_client();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11140,7 +11140,7 @@ var require_mock_client = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify3(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -11153,7 +11153,7 @@ var require_mock_client = __commonJS({
 var require_mock_pool = __commonJS({
   "../../../node_modules/undici/lib/mock/mock-pool.js"(exports, module) {
     "use strict";
-    var { promisify: promisify3 } = __require("node:util");
+    var { promisify: promisify2 } = __require("node:util");
     var Pool = require_pool();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11193,7 +11193,7 @@ var require_mock_pool = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify3(this[kOriginalClose])();
+        await promisify2(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -20905,9 +20905,9 @@ var require_pend = __commonJS({
   }
 });
 
-// ../../js/wp-release/node_modules/yauzl/fd-slicer.js
+// node_modules/yauzl/fd-slicer.js
 var require_fd_slicer = __commonJS({
-  "../../js/wp-release/node_modules/yauzl/fd-slicer.js"(exports) {
+  "node_modules/yauzl/fd-slicer.js"(exports) {
     var fs3 = __require("fs");
     var util = __require("util");
     var stream = __require("stream");
@@ -21062,9 +21062,9 @@ var require_fd_slicer = __commonJS({
   }
 });
 
-// ../../js/wp-release/node_modules/yauzl/crc32.js
+// node_modules/yauzl/crc32.js
 var require_crc32 = __commonJS({
-  "../../js/wp-release/node_modules/yauzl/crc32.js"(exports, module) {
+  "node_modules/yauzl/crc32.js"(exports, module) {
     var CRC_TABLE = new Int32Array([
       0,
       1996959894,
@@ -21334,9 +21334,9 @@ var require_crc32 = __commonJS({
   }
 });
 
-// ../../js/wp-release/node_modules/yauzl/index.js
+// node_modules/yauzl/index.js
 var require_yauzl = __commonJS({
-  "../../js/wp-release/node_modules/yauzl/index.js"(exports) {
+  "node_modules/yauzl/index.js"(exports) {
     var fs3 = __require("fs");
     var zlib = __require("zlib");
     var fd_slicer = require_fd_slicer();
@@ -22673,20 +22673,20 @@ function setOutput(name, value) {
   issueCommand("set-output", { name }, toCommandValue(value));
 }
 
-// ../../js/wp-release/dist/cli.js
+// node_modules/@wpelevator/wp-release/dist/cli.js
 import { parseArgs } from "node:util";
 
-// ../../js/wp-release/dist/commands/zip.js
+// node_modules/@wpelevator/wp-release/dist/commands/zip.js
 import { existsSync as existsSync3 } from "node:fs";
 import { basename as basename2, resolve as resolve5 } from "node:path";
 
-// ../../js/wp-release/dist/checksums.js
+// node_modules/@wpelevator/wp-release/dist/checksums.js
 import { createReadStream } from "node:fs";
 import { mkdir as mkdir2, readFile as readFile2, writeFile as writeFile2 } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, join as join2 } from "node:path";
 
-// ../../js/wp-release/dist/errors.js
+// node_modules/@wpelevator/wp-release/dist/errors.js
 var ValidationError = class extends Error {
   name = "ValidationError";
   exitCode = 2;
@@ -22703,7 +22703,7 @@ var CredentialsError = class _CredentialsError extends Error {
   exitCode = _CredentialsError.EXIT_CODE;
 };
 
-// ../../js/wp-release/dist/file-selection.js
+// node_modules/@wpelevator/wp-release/dist/file-selection.js
 var import_ignore = __toESM(require_ignore(), 1);
 import { readdir as readdir2, readFile } from "node:fs/promises";
 import { join, posix, resolve } from "node:path";
@@ -22776,7 +22776,7 @@ async function findEntryFiles(sourceDir, path3, entry, rules) {
   return [];
 }
 
-// ../../js/wp-release/dist/checksums.js
+// node_modules/@wpelevator/wp-release/dist/checksums.js
 var CHECKSUMS_EXTENSION = ".checksums.json";
 var CHECKSUM_ALGORITHMS = ["md5", "sha256"];
 var PACKAGE_TYPES = ["plugin", "theme"];
@@ -22889,7 +22889,7 @@ async function verifyChecksums(input2) {
   return compareChecksums(expected, await hashFiles(sourceDir, files));
 }
 
-// ../../js/wp-release/dist/filename.js
+// node_modules/@wpelevator/wp-release/dist/filename.js
 var FILENAME_FORMAT = "{slug}.{version}";
 function formatFilename(format, values) {
   const { slug, version = null } = values;
@@ -22902,7 +22902,7 @@ function formatFilename(format, values) {
   return format.replaceAll("{slug}", slug).replaceAll("{version}", version ?? "");
 }
 
-// ../../js/wp-release/dist/package-meta.js
+// node_modules/@wpelevator/wp-release/dist/package-meta.js
 import { open as open2, readdir as readdir3, readFile as readFile3 } from "node:fs/promises";
 import { join as join3 } from "node:path";
 var HEADER_BYTES = 8192;
@@ -23077,10 +23077,10 @@ async function readReadme(dir, name) {
   return null;
 }
 
-// ../../js/wp-release/dist/summary.js
+// node_modules/@wpelevator/wp-release/dist/summary.js
 import { isAbsolute, relative, resolve as resolve3, sep } from "node:path";
 
-// ../../js/wp-release/dist/deploy-options.js
+// node_modules/@wpelevator/wp-release/dist/deploy-options.js
 import { existsSync as existsSync2 } from "node:fs";
 import { basename, resolve as resolve2 } from "node:path";
 var SVN_URL = "https://plugins.svn.wordpress.org/{slug}/";
@@ -23182,7 +23182,7 @@ function resolveDeployOptions(input2 = {}) {
   return options2;
 }
 
-// ../../js/wp-release/dist/git.js
+// node_modules/@wpelevator/wp-release/dist/git.js
 import { spawn } from "node:child_process";
 function redactUrls(text) {
   return text.replace(/(\w+:\/\/)[^/@\s]+@/g, "$1***@");
@@ -23230,7 +23230,7 @@ function createGitRunner(binary = "git") {
   });
 }
 
-// ../../js/wp-release/dist/summary.js
+// node_modules/@wpelevator/wp-release/dist/summary.js
 var WPORG_SVN_HOST = "https://plugins.svn.wordpress.org/";
 var SUMMARY_LIST_LIMIT = 100;
 function getWorkspacePath(workspace, file) {
@@ -23411,7 +23411,7 @@ function getGitDeploySummary(context, input2) {
   ]);
 }
 
-// ../../js/wp-release/dist/zip.js
+// node_modules/@wpelevator/wp-release/dist/zip.js
 var import_yazl = __toESM(require_yazl(), 1);
 import { createWriteStream } from "node:fs";
 import { rm as rm2 } from "node:fs/promises";
@@ -23446,11 +23446,11 @@ function isValidRootFolder(name) {
   return !/[\\/]/.test(name) && "." !== name && ".." !== name;
 }
 
-// ../../js/wp-release/dist/commands/args.js
+// node_modules/@wpelevator/wp-release/dist/commands/args.js
 import { stat as stat2 } from "node:fs/promises";
 import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve4 } from "node:path";
 
-// ../../js/wp-release/dist/signing.js
+// node_modules/@wpelevator/wp-release/dist/signing.js
 import { createHash as createHash2, createPrivateKey, createPublicKey, sign, verify } from "node:crypto";
 import { createReadStream as createReadStream2 } from "node:fs";
 import { readFile as readFile4, writeFile as writeFile3 } from "node:fs/promises";
@@ -23519,7 +23519,7 @@ async function verifyFileSignature(path3, signaturePath, publicKey) {
   return signatures.some((signature) => verify(null, digest, publicKey, Buffer.from(signature, "base64")));
 }
 
-// ../../js/wp-release/dist/commands/command.js
+// node_modules/@wpelevator/wp-release/dist/commands/command.js
 function getString(values, name) {
   const value = values[name];
   return "string" === typeof value ? value : void 0;
@@ -23531,7 +23531,7 @@ function getStrings(values, name) {
   return [values[name]].flat().filter((value) => "string" === typeof value);
 }
 
-// ../../js/wp-release/dist/commands/args.js
+// node_modules/@wpelevator/wp-release/dist/commands/args.js
 var fileSelectionArgs = {
   distignore: { type: "string" },
   "no-distignore": { type: "boolean" },
@@ -23584,7 +23584,7 @@ function resolveOutput(input2) {
   return resolve4(input2.cwd, input2.output ?? input2.filename);
 }
 
-// ../../js/wp-release/dist/commands/zip.js
+// node_modules/@wpelevator/wp-release/dist/commands/zip.js
 var ZIP_EXTENSION = ".zip";
 function getChecksumsPath(zipPath) {
   const name = zipPath.endsWith(ZIP_EXTENSION) ? zipPath.slice(0, -ZIP_EXTENSION.length) : zipPath;
@@ -23693,7 +23693,7 @@ always give the same ZIP.`,
   }
 };
 
-// ../../js/wp-release/dist/commands/checksums.js
+// node_modules/@wpelevator/wp-release/dist/commands/checksums.js
 import { basename as basename3, resolve as resolve6 } from "node:path";
 var checksums_default = {
   name: "checksums",
@@ -23766,7 +23766,7 @@ matches the ZIP contents.`,
   }
 };
 
-// ../../js/wp-release/dist/commands/sign.js
+// node_modules/@wpelevator/wp-release/dist/commands/sign.js
 import { resolve as resolve7 } from "node:path";
 import { stat as stat3 } from "node:fs/promises";
 var sign_default = {
@@ -23820,13 +23820,13 @@ that belongs to the signing key.`,
   }
 };
 
-// ../../js/wp-release/dist/commands/verify.js
+// node_modules/@wpelevator/wp-release/dist/commands/verify.js
 import { existsSync as existsSync4 } from "node:fs";
 import { mkdir as mkdir4, mkdtemp, readFile as readFile5, rm as rm3 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename as basename4, isAbsolute as isAbsolute3, join as join6, posix as posix3, resolve as resolve8 } from "node:path";
 
-// ../../js/wp-release/dist/download.js
+// node_modules/@wpelevator/wp-release/dist/download.js
 import { createWriteStream as createWriteStream2 } from "node:fs";
 import { Readable } from "node:stream";
 import { pipeline as pipeline2 } from "node:stream/promises";
@@ -23841,7 +23841,7 @@ async function downloadFile(url, path3) {
   await pipeline2(Readable.fromWeb(response.body), createWriteStream2(path3));
 }
 
-// ../../js/wp-release/dist/report.js
+// node_modules/@wpelevator/wp-release/dist/report.js
 function logProblems(logger2, title, problems, description = "") {
   problems.forEach(({ message, ...annotation }) => logger2.error(message, annotation));
   logger2.summary((context) => getProblemsSummary(context, title, problems, description));
@@ -23857,7 +23857,7 @@ function logError(logger2, error, title = "wp-release") {
   }
 }
 
-// ../../js/wp-release/dist/unzip.js
+// node_modules/@wpelevator/wp-release/dist/unzip.js
 var import_yauzl = __toESM(require_yauzl(), 1);
 import { createWriteStream as createWriteStream3 } from "node:fs";
 import { mkdir as mkdir3 } from "node:fs/promises";
@@ -23935,7 +23935,7 @@ function openReadStream(zip, entry) {
   return new Promise((resolve11, reject) => zip.openReadStream(entry, (error, stream) => error ? reject(error) : resolve11(stream)));
 }
 
-// ../../js/wp-release/dist/commands/verify.js
+// node_modules/@wpelevator/wp-release/dist/commands/verify.js
 async function checkSignature(checksumsPath, publicKey) {
   const signaturePath = checksumsPath + SIGNATURE_EXTENSION;
   if (!existsSync4(signaturePath)) {
@@ -24196,10 +24196,10 @@ where the copies are looked for.`,
   }
 };
 
-// ../../js/wp-release/dist/commands/version-check.js
+// node_modules/@wpelevator/wp-release/dist/commands/version-check.js
 import { basename as basename5, resolve as resolve9 } from "node:path";
 
-// ../../js/wp-release/dist/version-check.js
+// node_modules/@wpelevator/wp-release/dist/version-check.js
 var import_ignore2 = __toESM(require_ignore(), 1);
 import { readFile as readFile6 } from "node:fs/promises";
 import { join as join7 } from "node:path";
@@ -24355,7 +24355,7 @@ async function findVersionMismatches(input2) {
   };
 }
 
-// ../../js/wp-release/dist/commands/version-check.js
+// node_modules/@wpelevator/wp-release/dist/commands/version-check.js
 function getGitTag(gitTag) {
   const ref = process.env.GITHUB_REF;
   return gitTag ?? (isTagRef(ref) ? ref ?? null : null);
@@ -24425,14 +24425,14 @@ no Stable tag, so it's only checked for plugins.`,
   }
 };
 
-// ../../js/wp-release/dist/svn-deploy.js
+// node_modules/@wpelevator/wp-release/dist/svn-deploy.js
 var import_ignore4 = __toESM(require_ignore(), 1);
 import { existsSync as existsSync5 } from "node:fs";
 import { mkdir as mkdir6, mkdtemp as mkdtemp2, rm as rm5 } from "node:fs/promises";
 import { tmpdir as tmpdir2 } from "node:os";
 import { extname, join as join9, posix as posix4 } from "node:path";
 
-// ../../js/wp-release/dist/logger.js
+// node_modules/@wpelevator/wp-release/dist/logger.js
 var TextWriter = class {
   stdout;
   stderr;
@@ -24531,7 +24531,7 @@ var Logger = class {
   }
 };
 
-// ../../js/wp-release/dist/svn.js
+// node_modules/@wpelevator/wp-release/dist/svn.js
 import { spawn as spawn2 } from "node:child_process";
 var SvnError = class extends Error {
   name = "SvnError";
@@ -24784,7 +24784,7 @@ var Svn = class {
   }
 };
 
-// ../../js/wp-release/dist/sync.js
+// node_modules/@wpelevator/wp-release/dist/sync.js
 var import_ignore3 = __toESM(require_ignore(), 1);
 import { copyFile as copyFile2, mkdir as mkdir5, readdir as readdir4, readFile as readFile7, rm as rm4, rmdir as rmdir2, stat as stat4 } from "node:fs/promises";
 import { dirname as dirname3, join as join8 } from "node:path";
@@ -24843,7 +24843,7 @@ async function syncDirectory(input2) {
   return { copied, deleted };
 }
 
-// ../../js/wp-release/dist/svn-deploy.js
+// node_modules/@wpelevator/wp-release/dist/svn-deploy.js
 var ASSET_MIME_TYPES = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
@@ -25316,7 +25316,7 @@ var SvnDeploy = class {
   }
 };
 
-// ../../js/wp-release/dist/commands/deploy-svn.js
+// node_modules/@wpelevator/wp-release/dist/commands/deploy-svn.js
 function getDeployInputFromArgs(input2) {
   const { values, positionals, cwd } = input2;
   const flag = (name) => getBoolean(values, name) || void 0;
@@ -25411,7 +25411,7 @@ Examples:
   }
 };
 
-// ../../js/wp-release/dist/git-deploy.js
+// node_modules/@wpelevator/wp-release/dist/git-deploy.js
 import { mkdtemp as mkdtemp3, rm as rm6, stat as stat5 } from "node:fs/promises";
 import { tmpdir as tmpdir3 } from "node:os";
 import { join as join10, resolve as resolve10 } from "node:path";
@@ -25763,7 +25763,7 @@ var GitDeploy = class {
   }
 };
 
-// ../../js/wp-release/dist/commands/deploy-git.js
+// node_modules/@wpelevator/wp-release/dist/commands/deploy-git.js
 function getGitDeployInputFromArgs(values, positionals, cwd) {
   return {
     cwd,
@@ -25835,7 +25835,7 @@ Examples:
   }
 };
 
-// ../../js/wp-release/dist/github-actions-writer.js
+// node_modules/@wpelevator/wp-release/dist/github-actions-writer.js
 import { appendFileSync as appendFileSync2 } from "node:fs";
 function escapeData2(text) {
   return text.replaceAll("%", "%25").replaceAll("\r", "%0D").replaceAll("\n", "%0A");
@@ -25905,14 +25905,14 @@ var GitHubActionsWriter = class {
   }
 };
 
-// ../../js/wp-release/dist/changeset-release.js
+// node_modules/@wpelevator/wp-release/dist/changeset-release.js
 import { randomUUID as randomUUID2 } from "node:crypto";
 import { execFile } from "node:child_process";
 import { access as access3, mkdir as mkdir7, readdir as readdir5, readFile as readFile8, rm as rm7, writeFile as writeFile4 } from "node:fs/promises";
 import path2 from "node:path";
 import { promisify } from "node:util";
 
-// ../../js/wp-release/dist/changeset-config.js
+// node_modules/@wpelevator/wp-release/dist/changeset-config.js
 import { access as access2 } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -25987,9 +25987,6 @@ function validateChangesetConfig(config, configFile) {
   if (void 0 !== candidate.nextVersion && "function" !== typeof candidate.nextVersion) {
     throw new ValidationError(`wp-release config ${configFile}.nextVersion must be a function.`);
   }
-  if (void 0 !== candidate.changelogEntry && "function" !== typeof candidate.changelogEntry) {
-    throw new ValidationError(`wp-release config ${configFile}.changelogEntry must be a function.`);
-  }
   if (void 0 !== candidate.releaseNotes && "function" !== typeof candidate.releaseNotes) {
     throw new ValidationError(`wp-release config ${configFile}.releaseNotes must be a function.`);
   }
@@ -26054,7 +26051,7 @@ function validateVersionDescriptor(descriptor, location, isTarget) {
   }
 }
 
-// ../../js/wp-release/dist/changesets.js
+// node_modules/@wpelevator/wp-release/dist/changesets.js
 var CHANGESET_BUMPS = ["patch", "minor", "major"];
 var BUMP_RANK = {
   patch: 0,
@@ -26104,8 +26101,8 @@ ${frontmatter}
 ${changeset.summary.trim()}
 `;
 }
-function formatChangelogList(entries) {
-  return entries.filter(Boolean).map((item) => `- ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n");
+function formatChangelogEntries(changesets) {
+  return changesets.map((item) => item.summary.trim()).filter(Boolean).map((item) => `- ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n");
 }
 function getChangesetBump(changesets, packageName2) {
   const bumps = changesets.map((changeset) => changeset.packages[packageName2]).filter((bump) => Boolean(bump));
@@ -26128,7 +26125,7 @@ function getNextVersion(currentVersion, bump) {
   return `${match[1]}.${match[2]}.${Number(match[3]) + 1}`;
 }
 
-// ../../js/wp-release/dist/changeset-release.js
+// node_modules/@wpelevator/wp-release/dist/changeset-release.js
 var execFileAsync = promisify(execFile);
 async function getReleaseContext(input2) {
   const loaded = await loadChangesetConfig(input2);
@@ -26211,12 +26208,10 @@ async function versionChangesets(input2) {
   const { config, packages } = context;
   const releasePlan = input2.packages ? selectReleasePlan(context.plan, packages, input2.packages) : context.plan;
   const date = input2.date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const changesetDirectory = path2.resolve(input2.cwd, config.changesets ?? ".changeset");
-  const releases = await getVersionedReleases(input2.cwd, config, releasePlan.releases, changesetDirectory);
   if (!input2.dryRun) {
     const journal = /* @__PURE__ */ new Map();
     try {
-      for (const release of releases) {
+      for (const release of releasePlan.releases) {
         const configured = packages.find((pkg) => pkg.name === release.package.name);
         if (!configured) {
           throw new ValidationError(`Unknown package "${release.package.name}".`);
@@ -26227,6 +26222,7 @@ async function versionChangesets(input2) {
         await verifyVersionTargets(input2.cwd, configured, release.nextVersion);
         await prependChangelog(configured.directory, release, date, config.readmeChangelog ?? false, config.changelogInsertAfter, journal);
       }
+      const changesetDirectory = path2.resolve(input2.cwd, config.changesets ?? ".changeset");
       for (const changeset of releasePlan.changesets) {
         await consumeChangeset(path2.join(changesetDirectory, changeset.fileName), changeset, input2.packages, journal);
       }
@@ -26239,54 +26235,10 @@ async function versionChangesets(input2) {
     }
   }
   return {
-    changesets: releasePlan.changesets,
-    releases,
+    ...releasePlan,
     date,
     changed: !input2.dryRun && releasePlan.changesets.length > 0
   };
-}
-async function getVersionedReleases(cwd, config, releases, changesetDirectory) {
-  const commits = /* @__PURE__ */ new Map();
-  const getCommit = (changeset) => {
-    const cached = commits.get(changeset.fileName) ?? getChangesetCommit(cwd, path2.join(changesetDirectory, changeset.fileName));
-    commits.set(changeset.fileName, cached);
-    return cached;
-  };
-  return Promise.all(releases.map(async (release) => {
-    const entries = [];
-    for (const changeset of release.changesets) {
-      entries.push(await getChangelogEntry(config, release.package, changeset, getCommit));
-    }
-    return { ...release, changelog: formatChangelogList(entries) };
-  }));
-}
-async function getChangelogEntry(config, pkg, changeset, getCommit) {
-  const summary2 = changeset.summary.trim();
-  if (!summary2 || !config.changelogEntry) {
-    return summary2;
-  }
-  const commit = await getCommit(changeset);
-  const entry = await config.changelogEntry({
-    package: pkg,
-    changeset,
-    ...commit ? { commit } : {}
-  });
-  if ("string" !== typeof entry) {
-    throw new ValidationError(`The changelogEntry formatter didn't return a string for changeset ${changeset.fileName}.`);
-  }
-  return entry.trim();
-}
-async function getChangesetCommit(cwd, file) {
-  const output = await git(cwd, [
-    "log",
-    "--diff-filter=A",
-    "--format=%H%x1f%h%x1f%s",
-    "-1",
-    "--",
-    path2.relative(cwd, file).split(path2.sep).join("/")
-  ]);
-  const [hash, shortHash = "", subject = ""] = output.trim().split("");
-  return hash ? { hash, shortHash, subject } : void 0;
 }
 function selectReleasePlan(plan, packages, names) {
   names.forEach((name) => {
@@ -26722,7 +26674,7 @@ async function prependChangelog(directory, release, date, readmeChangelog, chang
   const summaries = release.changesets.map((item) => item.summary.trim()).filter(Boolean);
   const section = `## ${release.nextVersion} (${date})
 
-${release.changelog}
+${formatChangelogEntries(release.changesets)}
 
 `;
   const changelog = path2.join(directory, "CHANGELOG.md");
@@ -26999,7 +26951,7 @@ function compareIdentifier(a, b) {
   return Number(a > b) - Number(a < b);
 }
 
-// ../../js/wp-release/dist/commands/changeset-args.js
+// node_modules/@wpelevator/wp-release/dist/commands/changeset-args.js
 var changesetAddArgs = {
   package: { type: "string", multiple: true },
   bump: { type: "string", multiple: true },
@@ -27121,7 +27073,7 @@ function parseChangesetTagArgs(values) {
   return args;
 }
 
-// ../../js/wp-release/dist/commands/changeset-add.js
+// node_modules/@wpelevator/wp-release/dist/commands/changeset-add.js
 var changeset_add_default = {
   name: "changeset-add",
   usage: "changeset-add (--empty | --package <name> --bump <bump> ...) [options]",
@@ -27156,7 +27108,7 @@ that should pass the status check without producing a release.`,
   }
 };
 
-// ../../js/wp-release/dist/commands/changeset-status.js
+// node_modules/@wpelevator/wp-release/dist/commands/changeset-status.js
 var changeset_status_default = {
   name: "changeset-status",
   usage: "changeset-status [--since <ref>]",
@@ -27220,7 +27172,7 @@ An empty changeset added since the comparison base counts as an explicit no-rele
   }
 };
 
-// ../../js/wp-release/dist/commands/changeset-version.js
+// node_modules/@wpelevator/wp-release/dist/commands/changeset-version.js
 var changeset_version_default = {
   name: "changeset-version",
   usage: "changeset-version [--dry-run] [--date <YYYY-MM-DD>] [--package <name>]",
@@ -27257,14 +27209,14 @@ changesets without packages are left for a run without --package.`,
           bump: item.bump,
           currentVersion: item.currentVersion,
           nextVersion: item.nextVersion,
-          changelog: item.changelog
+          changelog: formatChangelogEntries(item.changesets)
         }))
       }
     };
   }
 };
 
-// ../../js/wp-release/dist/commands/changeset-tag.js
+// node_modules/@wpelevator/wp-release/dist/commands/changeset-tag.js
 var changeset_tag_default = {
   name: "changeset-tag",
   usage: "changeset-tag [--dry-run] [--untagged] [--since <ref>] [--package <name>] [--version <version>] [--push] [--github-release]",
@@ -27308,7 +27260,7 @@ workflow.`,
   }
 };
 
-// ../../js/wp-release/dist/cli.js
+// node_modules/@wpelevator/wp-release/dist/cli.js
 var commands = [
   zip_default,
   checksums_default,
@@ -27353,11 +27305,6 @@ async function execute(name, args, context) {
     ...configFile ? { configFile } : {}
   });
 }
-
-// ../../js/wp-release/dist/github.js
-import { execFile as execFile2 } from "node:child_process";
-import { promisify as promisify2 } from "node:util";
-var execFileAsync2 = promisify2(execFile2);
 
 // src/inputs.ts
 function input(name) {
