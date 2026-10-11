@@ -81,7 +81,7 @@ The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/pa
 
 ## Development
 
-The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo, `npm run build` bundles it, and the split-push workflow commits it to the action's release repository. `npm test` runs the input mapping tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
+The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo. `npm run build` bundles the published `wp-release` version declared by this action; update that dependency after the new `wp-release` version is published. The split-push workflow commits the bundle to the action's release repository. `npm test` runs the input mapping tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
 
 ```bash
 npm run build --workspace @wpelevator/wp-release-checksums-action

@@ -3,8 +3,7 @@ import { build } from 'esbuild';
 // Bundle the action and its dependencies into a single file for the GitHub Actions Node.js runtime.
 await build( {
 	entryPoints: [ 'src/run.ts' ],
-	// Bundle the wp-release source instead of requiring its build first.
-	conditions: [ 'wpelevator-source' ],
+	// Bundle the package export selected by this action's declared dependency.
 	outfile: 'dist/index.js',
 	bundle: true,
 	platform: 'node',
