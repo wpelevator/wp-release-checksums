@@ -11100,7 +11100,7 @@ var require_mock_interceptor = __commonJS({
 var require_mock_client = __commonJS({
   "../../../node_modules/undici/lib/mock/mock-client.js"(exports, module) {
     "use strict";
-    var { promisify: promisify2 } = __require("node:util");
+    var { promisify: promisify3 } = __require("node:util");
     var Client = require_client();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11140,7 +11140,7 @@ var require_mock_client = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify2(this[kOriginalClose])();
+        await promisify3(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -11153,7 +11153,7 @@ var require_mock_client = __commonJS({
 var require_mock_pool = __commonJS({
   "../../../node_modules/undici/lib/mock/mock-pool.js"(exports, module) {
     "use strict";
-    var { promisify: promisify2 } = __require("node:util");
+    var { promisify: promisify3 } = __require("node:util");
     var Pool = require_pool();
     var { buildMockDispatch } = require_mock_utils();
     var {
@@ -11193,7 +11193,7 @@ var require_mock_pool = __commonJS({
         return new MockInterceptor(opts, this[kDispatches]);
       }
       async [kClose]() {
-        await promisify2(this[kOriginalClose])();
+        await promisify3(this[kOriginalClose])();
         this[kConnected] = 0;
         this[kMockAgent][Symbols.kClients].delete(this[kOrigin]);
       }
@@ -25987,6 +25987,9 @@ function validateChangesetConfig(config, configFile) {
   if (void 0 !== candidate.nextVersion && "function" !== typeof candidate.nextVersion) {
     throw new ValidationError(`wp-release config ${configFile}.nextVersion must be a function.`);
   }
+  if (void 0 !== candidate.changelogEntry && "function" !== typeof candidate.changelogEntry) {
+    throw new ValidationError(`wp-release config ${configFile}.changelogEntry must be a function.`);
+  }
   if (void 0 !== candidate.releaseNotes && "function" !== typeof candidate.releaseNotes) {
     throw new ValidationError(`wp-release config ${configFile}.releaseNotes must be a function.`);
   }
@@ -26101,8 +26104,8 @@ ${frontmatter}
 ${changeset.summary.trim()}
 `;
 }
-function formatChangelogEntries(changesets) {
-  return changesets.map((item) => item.summary.trim()).filter(Boolean).map((item) => `- ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n");
+function formatChangelogList(entries) {
+  return entries.filter(Boolean).map((item) => `- ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n");
 }
 function getChangesetBump(changesets, packageName2) {
   const bumps = changesets.map((changeset) => changeset.packages[packageName2]).filter((bump) => Boolean(bump));
@@ -26208,10 +26211,12 @@ async function versionChangesets(input2) {
   const { config, packages } = context;
   const releasePlan = input2.packages ? selectReleasePlan(context.plan, packages, input2.packages) : context.plan;
   const date = input2.date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const changesetDirectory = path2.resolve(input2.cwd, config.changesets ?? ".changeset");
+  const releases = await getVersionedReleases(input2.cwd, config, releasePlan.releases, changesetDirectory);
   if (!input2.dryRun) {
     const journal = /* @__PURE__ */ new Map();
     try {
-      for (const release of releasePlan.releases) {
+      for (const release of releases) {
         const configured = packages.find((pkg) => pkg.name === release.package.name);
         if (!configured) {
           throw new ValidationError(`Unknown package "${release.package.name}".`);
@@ -26222,7 +26227,6 @@ async function versionChangesets(input2) {
         await verifyVersionTargets(input2.cwd, configured, release.nextVersion);
         await prependChangelog(configured.directory, release, date, config.readmeChangelog ?? false, config.changelogInsertAfter, journal);
       }
-      const changesetDirectory = path2.resolve(input2.cwd, config.changesets ?? ".changeset");
       for (const changeset of releasePlan.changesets) {
         await consumeChangeset(path2.join(changesetDirectory, changeset.fileName), changeset, input2.packages, journal);
       }
@@ -26235,10 +26239,54 @@ async function versionChangesets(input2) {
     }
   }
   return {
-    ...releasePlan,
+    changesets: releasePlan.changesets,
+    releases,
     date,
     changed: !input2.dryRun && releasePlan.changesets.length > 0
   };
+}
+async function getVersionedReleases(cwd, config, releases, changesetDirectory) {
+  const commits = /* @__PURE__ */ new Map();
+  const getCommit = (changeset) => {
+    const cached = commits.get(changeset.fileName) ?? getChangesetCommit(cwd, path2.join(changesetDirectory, changeset.fileName));
+    commits.set(changeset.fileName, cached);
+    return cached;
+  };
+  return Promise.all(releases.map(async (release) => {
+    const entries = [];
+    for (const changeset of release.changesets) {
+      entries.push(await getChangelogEntry(config, release.package, changeset, getCommit));
+    }
+    return { ...release, changelog: formatChangelogList(entries) };
+  }));
+}
+async function getChangelogEntry(config, pkg, changeset, getCommit) {
+  const summary2 = changeset.summary.trim();
+  if (!summary2 || !config.changelogEntry) {
+    return summary2;
+  }
+  const commit = await getCommit(changeset);
+  const entry = await config.changelogEntry({
+    package: pkg,
+    changeset,
+    ...commit ? { commit } : {}
+  });
+  if ("string" !== typeof entry) {
+    throw new ValidationError(`The changelogEntry formatter didn't return a string for changeset ${changeset.fileName}.`);
+  }
+  return entry.trim();
+}
+async function getChangesetCommit(cwd, file) {
+  const output = await git(cwd, [
+    "log",
+    "--diff-filter=A",
+    "--format=%H%x1f%h%x1f%s",
+    "-1",
+    "--",
+    path2.relative(cwd, file).split(path2.sep).join("/")
+  ]);
+  const [hash, shortHash = "", subject = ""] = output.trim().split("");
+  return hash ? { hash, shortHash, subject } : void 0;
 }
 function selectReleasePlan(plan, packages, names) {
   names.forEach((name) => {
@@ -26674,7 +26722,7 @@ async function prependChangelog(directory, release, date, readmeChangelog, chang
   const summaries = release.changesets.map((item) => item.summary.trim()).filter(Boolean);
   const section = `## ${release.nextVersion} (${date})
 
-${formatChangelogEntries(release.changesets)}
+${release.changelog}
 
 `;
   const changelog = path2.join(directory, "CHANGELOG.md");
@@ -27209,7 +27257,7 @@ changesets without packages are left for a run without --package.`,
           bump: item.bump,
           currentVersion: item.currentVersion,
           nextVersion: item.nextVersion,
-          changelog: formatChangelogEntries(item.changesets)
+          changelog: item.changelog
         }))
       }
     };
@@ -27305,6 +27353,11 @@ async function execute(name, args, context) {
     ...configFile ? { configFile } : {}
   });
 }
+
+// ../../js/wp-release/dist/github.js
+import { execFile as execFile2 } from "node:child_process";
+import { promisify as promisify2 } from "node:util";
+var execFileAsync2 = promisify2(execFile2);
 
 // src/inputs.ts
 function input(name) {
