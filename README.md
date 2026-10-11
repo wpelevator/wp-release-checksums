@@ -6,7 +6,7 @@ GitHub Action that writes a checksums manifest of a WordPress plugin or theme us
 
 **Status:** first release (0.x). Boolean inputs must be `true` or `false`; anything else fails the run.
 
-The manifest lists the MD5 and SHA-256 hash of every distributed file in the format of the WordPress.org plugin checksums API, with paths relative to the plugin or theme folder. Because it lists the files and not the ZIP, it stays valid for the GitHub release ZIP, the ZIP that WordPress.org builds from SVN and an installed copy. To get one together with the ZIP, use the `checksums` input of [`wp-release-zip`](../wp-release-zip) instead, so that both select the same files. [`wp-release-sign`](../wp-release-sign) signs the manifest so that it can be trusted.
+The manifest lists the MD5 and SHA-256 hash of every distributed file in the format of the WordPress.org plugin checksums API, with paths relative to the plugin or theme folder. Because it lists the files and not the ZIP, it stays valid for the GitHub release ZIP, the ZIP that WordPress.org builds from SVN and an installed copy. To get one together with the ZIP, use the `checksums` input of [`wp-release-zip`](https://github.com/wpelevator/wp-release-zip) instead, so that both select the same files. [`wp-release-sign`](https://github.com/wpelevator/wp-release-sign) signs the manifest so that it can be trusted.
 
 ## Usage
 
@@ -37,7 +37,7 @@ To ship the signed manifest inside the plugin, so that an installed copy can be 
           source-dir: dist # Without the checksums input, which would write a second manifest.
 ```
 
-The manifest doesn't list itself or its `.sig`, and `output` can be any path inside `source-dir`, such as `dist/includes/checksums.json`; missing folders are created. Attach the two files to the release as well. See [Manifest inside the plugin](../../js/wp-release#manifest-inside-the-plugin) for the post-deploy check against WordPress.org.
+The manifest doesn't list itself or its `.sig`, and `output` can be any path inside `source-dir`, such as `dist/includes/checksums.json`; missing folders are created. Attach the two files to the release as well. See [Manifest inside the plugin](https://www.npmjs.com/package/@wpelevator/wp-release#manifest-inside-the-plugin) for the post-deploy check against WordPress.org.
 
 ## Inputs
 
@@ -69,7 +69,7 @@ npm install --save-dev @wpelevator/wp-release
 npx wp-release checksums dist
 ```
 
-The inputs map to the flags of [`wp-release checksums`](../../js/wp-release#checksums): `source-dir` is the first argument, `slug`, `version`, `type`, `filename-format`, `output`, `distignore`, `exclude` and `force` keep their names, and `distignore: false` is `--no-distignore`. Add `--json` to read the path of the manifest from the output. The CLI needs Node.js 22.12 or later, and has no other dependencies on the runner. Run `npx wp-release checksums --help` for all options.
+The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/package/@wpelevator/wp-release#checksums): `source-dir` is the first argument, `slug`, `version`, `type`, `filename-format`, `output`, `distignore`, `exclude` and `force` keep their names, and `distignore: false` is `--no-distignore`. Add `--json` to read the path of the manifest from the output. The CLI needs Node.js 22.12 or later, and has no other dependencies on the runner. Run `npx wp-release checksums --help` for all options.
 
 ## How it works
 
