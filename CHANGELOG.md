@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 (2026-10-11)
+
+- Bundle wp-release 0.7.0.
+
 ## 0.2.1 (2026-10-11)
 
 - Keep the release actions pinned to a stable wp-release version while the monorepo root resolves them to its local workspace; support explicit changelog insertion markers before the first version heading.
