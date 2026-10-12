@@ -27171,12 +27171,389 @@ var GitHubActionsWriter = class {
   }
 };
 
-// ../../js/wp-release/dist/changeset-release.js
-import path9 from "node:path";
+// ../../js/wp-release/dist/changeset-packages.js
+import { readdir as readdir5 } from "node:fs/promises";
+import path3 from "node:path";
 
-// ../../js/wp-release/dist/changelog.js
-import { readFile as readFile8, writeFile as writeFile4 } from "node:fs/promises";
+// ../../js/wp-release/dist/json-files.js
+import { readFile as readFile8 } from "node:fs/promises";
+async function readJson(file) {
+  try {
+    return JSON.parse(await readFile8(file, "utf8"));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new ValidationError(`Could not read JSON manifest ${file}: ${message}`);
+  }
+}
+async function readJsonIfExists(file) {
+  try {
+    return JSON.parse(await readFile8(file, "utf8"));
+  } catch (error) {
+    if ("ENOENT" !== error.code) {
+      throw error;
+    }
+    return void 0;
+  }
+}
+
+// ../../js/wp-release/dist/version-files.js
+import { access as access2, readFile as readFile9, writeFile as writeFile4 } from "node:fs/promises";
+import path2 from "node:path";
+
+// ../../js/wp-release/dist/tag-format.js
 import path from "node:path";
+function formatTag(format, pkg, version) {
+  const type = pkg.group.tagType ?? defaultTagType(pkg.path, pkg.type);
+  return format.replaceAll("{name}", pkg.name).replaceAll("{slug}", "." === pkg.path ? path.basename(pkg.directory) : path.basename(pkg.path)).replaceAll("{path}", pkg.path).replaceAll("{type}", type).replaceAll("{version}", version);
+}
+function formatTemplatePrefix(pattern, packagePath, tagType) {
+  return pattern.replaceAll("{path}", packagePath).replaceAll("{type}", tagType ?? defaultTagType(packagePath)).replaceAll("{name}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{slug}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{version}", "");
+}
+function defaultTagType(packagePath, type) {
+  if ("." === packagePath && type) {
+    return type;
+  }
+  const first = packagePath.split("/")[0] ?? "package";
+  const irregular = {
+    actions: "action",
+    plugins: "plugin",
+    themes: "theme",
+    php: "php",
+    js: "js"
+  };
+  return irregular[first] ?? first.replace(/s$/, "");
+}
+
+// ../../js/wp-release/dist/versions.js
+var VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
+function isVersion(version) {
+  return VERSION_PATTERN.test(version);
+}
+function isPrerelease2(version) {
+  return Boolean(VERSION_PATTERN.exec(version)?.[4]);
+}
+function compareVersions(left, right) {
+  const [leftCore = "", leftPre] = splitPrerelease(left);
+  const [rightCore = "", rightPre] = splitPrerelease(right);
+  const a = leftCore.split(".").map(Number);
+  const b = rightCore.split(".").map(Number);
+  const core = (a[0] ?? 0) - (b[0] ?? 0) || (a[1] ?? 0) - (b[1] ?? 0) || (a[2] ?? 0) - (b[2] ?? 0);
+  if (core || leftPre === rightPre) {
+    return core;
+  }
+  if (void 0 === leftPre || void 0 === rightPre) {
+    return void 0 === leftPre ? 1 : -1;
+  }
+  return comparePrerelease(leftPre.split("."), rightPre.split("."));
+}
+function splitPrerelease(version) {
+  const index = version.indexOf("-");
+  return -1 === index ? [version] : [version.slice(0, index), version.slice(index + 1)];
+}
+function comparePrerelease(left, right) {
+  const [a, ...leftRest] = left;
+  const [b, ...rightRest] = right;
+  if (void 0 === a || void 0 === b) {
+    return (void 0 === a ? 0 : 1) - (void 0 === b ? 0 : 1);
+  }
+  const order = compareIdentifier(a, b);
+  return order || comparePrerelease(leftRest, rightRest);
+}
+function compareIdentifier(a, b) {
+  const aNumeric = /^\d+$/.test(a);
+  const bNumeric = /^\d+$/.test(b);
+  if (aNumeric && bNumeric) {
+    return Number(a) - Number(b);
+  }
+  if (aNumeric || bNumeric) {
+    return aNumeric ? -1 : 1;
+  }
+  return Number(a > b) - Number(a < b);
+}
+
+// ../../js/wp-release/dist/version-files.js
+async function readVersion(repository, directory, descriptor, relativePath, tagType) {
+  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
+    const manifest = await readJson(path2.join(directory, descriptor.file));
+    const version = manifest[descriptor.field];
+    if ("string" === typeof version && version.trim()) {
+      return version;
+    }
+    throw new ValidationError(`Missing ${descriptor.file}#${descriptor.field} in ${directory}.`);
+  }
+  if ("git-tag" === descriptor.kind) {
+    const pattern = descriptor.pattern ?? "{path}/{version}";
+    const tags = await repository.listTags(formatTemplatePrefix(pattern, relativePath, tagType));
+    const versions = tags.map((tag) => tag.match(/(?:^|\/|v)(\d+\.\d+\.\d+)$/)?.[1]).filter((item) => Boolean(item));
+    versions.sort((a, b) => compareVersions(b, a));
+    if (versions[0]) {
+      return versions[0];
+    }
+    throw new ValidationError(`No git tag matches ${pattern} for ${relativePath}.`);
+  }
+  if ("php-constant" === descriptor.kind) {
+    const file2 = path2.join(directory, descriptor.file);
+    const contents2 = await readFile9(file2, "utf8");
+    const versions = findConstantValues(contents2, descriptor.constant);
+    if (versions[0]) {
+      return versions[0];
+    }
+    throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
+  }
+  const file = path2.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
+  const contents = await readFile9(file, "utf8");
+  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
+  const match = new RegExp(`^\\s*\\*?\\s*${label}:\\s*([^\\r\\n]+)`, "im").exec(contents);
+  if (!match) {
+    throw new ValidationError(`Missing ${label} header in ${file}.`);
+  }
+  return match[1]?.trim() ?? "";
+}
+async function writeVersion(directory, descriptor, version, journal) {
+  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
+    const file2 = path2.join(directory, descriptor.file);
+    const contents2 = await readFile9(file2, "utf8");
+    const manifest = JSON.parse(contents2);
+    if ("composer-json" === descriptor.kind && descriptor.ifPresent && !Object.hasOwn(manifest, descriptor.field)) {
+      return;
+    }
+    manifest[descriptor.field] = version;
+    await journal.remember(file2);
+    await writeFile4(file2, `${JSON.stringify(manifest, null, "	")}
+`);
+    return;
+  }
+  if ("php-constant" === descriptor.kind) {
+    const file2 = path2.join(directory, descriptor.file);
+    const contents2 = await readFile9(file2, "utf8");
+    const constant = escapeRegExp(descriptor.constant);
+    const definePattern = new RegExp(`(\\bdefine\\s*\\(\\s*(['"])${constant}\\2\\s*,\\s*)(['"])(.*?)\\3`, "g");
+    const declarationPattern = new RegExp(`(\\bconst\\s+${constant}\\s*=\\s*)(['"])(.*?)\\2`, "g");
+    const updated = contents2.replace(definePattern, (_match, prefix, _nameQuote, quote) => `${prefix}${quote}${version}${quote}`).replace(declarationPattern, (_match, prefix, quote) => `${prefix}${quote}${version}${quote}`);
+    if (updated === contents2) {
+      throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
+    }
+    await journal.remember(file2);
+    await writeFile4(file2, updated);
+    return;
+  }
+  if ("wordpress-stable-tag" === descriptor.kind && descriptor.ifPresent && !await versionFileExists(directory, descriptor.kind, descriptor.file)) {
+    return;
+  }
+  const file = path2.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
+  const contents = await readFile9(file, "utf8");
+  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
+  const expression = new RegExp(`(^\\s*\\*?\\s*${label}:\\s*)[^\\r\\n]+`, "im");
+  if (!expression.test(contents)) {
+    throw new ValidationError(`Missing ${label} header in ${file}.`);
+  }
+  await journal.remember(file);
+  await writeFile4(file, contents.replace(expression, `$1${version}`));
+}
+async function verifyVersionTargets(repository, pkg, expected) {
+  for (const target of pkg.versionConfig.to) {
+    let actual;
+    if ("composer-json" === target.kind && target.ifPresent && !Object.hasOwn(await readJson(path2.join(pkg.directory, target.file)), target.field)) {
+      actual = void 0;
+    } else if ("wordpress-stable-tag" === target.kind && target.ifPresent && !await versionFileExists(pkg.directory, target.kind, target.file)) {
+      actual = void 0;
+    } else {
+      actual = await readVersion(repository, pkg.directory, target, pkg.path, pkg.group.tagType);
+    }
+    if (void 0 !== actual && actual !== expected) {
+      throw new ValidationError(`Version mismatch for ${pkg.name}: expected ${expected}, found ${actual}.`);
+    }
+  }
+}
+async function getVersionFile(directory, kind, configuredFile) {
+  if (configuredFile) {
+    return configuredFile;
+  }
+  if ("wordpress-plugin-header" === kind) {
+    const file = await findMainPluginFile({ dir: directory });
+    if (file) {
+      return file;
+    }
+    throw new ValidationError(`Could not find a plugin header file in ${directory}.`);
+  }
+  if ("wordpress-stable-tag" === kind) {
+    for (const file of ["readme.txt", "readme.md"]) {
+      try {
+        await access2(path2.join(directory, file));
+        return file;
+      } catch {
+      }
+    }
+    throw new ValidationError(`Could not find readme.txt or readme.md in ${directory}.`);
+  }
+  return "style.css";
+}
+async function versionFileExists(directory, kind, configuredFile) {
+  if (configuredFile) {
+    try {
+      await access2(path2.join(directory, configuredFile));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if ("wordpress-stable-tag" === kind) {
+    const files = await Promise.all(["readme.txt", "readme.md"].map(async (file) => {
+      try {
+        await access2(path2.join(directory, file));
+        return true;
+      } catch {
+        return false;
+      }
+    }));
+    return files.some(Boolean);
+  }
+  return true;
+}
+
+// ../../js/wp-release/dist/changeset-packages.js
+var SKIPPED_DIRECTORIES = [".git", "node_modules", "vendor", "dist"];
+async function discoverPackages(repository, config) {
+  const root = path3.resolve(repository.cwd, config.root ?? ".");
+  const packages = [];
+  const hasRecursiveGlob = config.packages.some((item) => item.glob.split("/").includes("**"));
+  const directories = await findDirectories(root, "", hasRecursiveGlob ? Infinity : Math.max(1, ...config.packages.map((item) => item.glob.split("/").length + 2)));
+  for (const group of config.packages) {
+    const matcher = globRegExp(group.glob);
+    const candidates = matcher.test(".") ? [".", ...directories] : directories;
+    const matches = candidates.filter((item) => matcher.test(item) && !(group.exclude ?? []).some((excluded) => globRegExp(excluded).test(item))).sort();
+    if (!matches.length) {
+      throw new ValidationError(`Package glob "${group.glob}" did not match any directories under ${root}.`);
+    }
+    for (const relativePath of matches) {
+      const directory = path3.join(root, relativePath);
+      const name = await packageName(directory, relativePath, group.idFrom ?? "path");
+      const currentVersion = await readVersion(repository, directory, group.version.from, relativePath, group.tagType);
+      if (packages.some((pkg) => pkg.name === name)) {
+        throw new ValidationError(`Package identifier "${name}" is configured more than once.`);
+      }
+      packages.push({
+        name,
+        directory,
+        path: relativePath,
+        type: packageType(group),
+        currentVersion,
+        group,
+        versionConfig: group.version
+      });
+    }
+  }
+  return packages;
+}
+function assertKnownPackages(packages, names) {
+  names.forEach((name) => {
+    if (!packages.some((pkg) => pkg.name === name)) {
+      throw new ValidationError(`Unknown package "${name}".`);
+    }
+  });
+}
+function findPackage(packages, identifier) {
+  const packagePath = identifier.replaceAll("\\", "/").replace(/^\.\//, "").replace(/\/+$/, "");
+  return packages.find((pkg) => pkg.name === identifier) ?? packages.find((pkg) => pkg.path === packagePath);
+}
+function resolvePackageNames(packages, identifiers) {
+  return identifiers.map((identifier) => {
+    const pkg = findPackage(packages, identifier);
+    if (!pkg) {
+      throw new ValidationError(`Unknown package "${identifier}".`);
+    }
+    return pkg.name;
+  });
+}
+async function getChangedPackages(repository, packages, since, uncommitted = false) {
+  const changedFiles = await repository.getChangedFiles(since, {
+    uncommitted
+  });
+  const filesByPackage = {};
+  const changed = packages.filter((pkg) => {
+    const packageFromRepo = repository.relativePath(pkg.directory);
+    const matchingFiles = "" === packageFromRepo ? changedFiles : changedFiles.filter((file) => file === packageFromRepo || file.startsWith(`${packageFromRepo}/`));
+    if (matchingFiles.length) {
+      filesByPackage[pkg.name] = matchingFiles;
+    }
+    return matchingFiles.length > 0;
+  });
+  return { packages: changed, filesByPackage };
+}
+function toChangesetPackage(pkg) {
+  return {
+    name: pkg.name,
+    directory: pkg.directory,
+    path: pkg.path,
+    type: pkg.type,
+    currentVersion: pkg.currentVersion
+  };
+}
+function globRegExp(glob) {
+  const escaped = glob.split("/").map((part) => {
+    if ("**" === part) {
+      return ".*";
+    }
+    return part.replaceAll(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", "[^/]*").replaceAll("?", "[^/]");
+  }).join("/");
+  return new RegExp(`^${escaped}$`);
+}
+async function findDirectories(root, prefix = "", maxDepth = 5) {
+  let entries;
+  try {
+    entries = await readdir5(path3.join(root, prefix), {
+      withFileTypes: true
+    });
+  } catch (error) {
+    if ("ENOENT" === error.code) {
+      return [];
+    }
+    throw error;
+  }
+  const directories = entries.filter((item) => item.isDirectory() && !SKIPPED_DIRECTORIES.includes(item.name));
+  if (prefix.split(path3.sep).filter(Boolean).length >= maxDepth) {
+    return directories.map((item) => path3.join(prefix, item.name));
+  }
+  const children = await Promise.all(directories.map((item) => findDirectories(root, path3.join(prefix, item.name), maxDepth)));
+  return [
+    ...directories.map((item) => path3.join(prefix, item.name)),
+    ...children.flat()
+  ];
+}
+async function packageName(directory, relativePath, idFrom) {
+  if ("path" === idFrom) {
+    if ("." === relativePath) {
+      return path3.basename(directory);
+    }
+    return relativePath.split(path3.sep).join("/");
+  }
+  const [file, field] = idFrom.split("#");
+  if (!file || !field) {
+    throw new ValidationError(`Invalid package identifier source "${idFrom}".`);
+  }
+  const manifest = await readJson(path3.join(directory, file));
+  const name = manifest[field];
+  if ("string" !== typeof name || !name.trim()) {
+    throw new ValidationError(`Expected ${file}#${field} in ${directory}.`);
+  }
+  return name;
+}
+function packageType(group) {
+  const kind = group.version.from.kind;
+  if ("wordpress-plugin-header" === kind) {
+    return "plugin";
+  }
+  if ("wordpress-theme-header" === kind) {
+    return "theme";
+  }
+  if ("package-json" === kind) {
+    return "npm";
+  }
+  return "other";
+}
+
+// ../../js/wp-release/dist/changeset-prompt.js
+import { createInterface } from "node:readline";
 
 // ../../js/wp-release/dist/changesets.js
 var CHANGESET_BUMPS = ["patch", "minor", "major"];
@@ -27252,11 +27629,203 @@ function getNextVersion(currentVersion, bump) {
   return `${match[1]}.${match[2]}.${Number(match[3]) + 1}`;
 }
 
+// ../../js/wp-release/dist/changeset-prompt.js
+var ChangesetPrompt = class {
+  terminal;
+  lines;
+  readline;
+  /**
+   * @param terminal Input to read answers from and output for the questions.
+   */
+  constructor(terminal) {
+    this.terminal = terminal;
+  }
+  /**
+   * Ask for the changeset, preselecting the changed packages.
+   *
+   * @param  input Packages, changed packages and an optional release note.
+   * @return Package bumps, empty for no release, and the release note.
+   * @throws {ValidationError} If the input ends before the changeset is complete.
+   */
+  async ask(input2) {
+    this.listPackages(input2);
+    const names = await this.askUntilValid(this.getPackagesQuestion(input2), (answer) => this.parsePackages(answer, input2));
+    const packages = {};
+    for (const name of names) {
+      packages[name] = await this.askUntilValid(`Bump for ${name} (patch, minor or major) [patch]: `, (answer) => this.parseBump(answer));
+    }
+    const summary2 = input2.summary ?? (names.length ? await this.askUntilValid("Release note: ", (answer) => this.parseSummary(answer)) : "");
+    return { packages, summary: summary2 };
+  }
+  /**
+   * Stop reading the input, so that the process can exit.
+   */
+  close() {
+    this.readline?.close();
+  }
+  /**
+   * Print the numbered packages, marking the changed ones.
+   *
+   * @param input Packages and changed packages.
+   */
+  listPackages(input2) {
+    const width = String(input2.packages.length).length;
+    const rows = input2.packages.map((pkg, index) => {
+      const marker = input2.changed.includes(pkg.name) ? "*" : " ";
+      const label = pkg.name === pkg.path ? pkg.name : `${pkg.name} (${pkg.path})`;
+      return `  ${String(index + 1).padStart(width)} ${marker} ${label}`;
+    });
+    const legend = input2.changed.length ? `* changed${input2.since ? ` since ${input2.since}` : ""} without a changeset` : "No changed packages without a changeset.";
+    this.terminal.output.write(`Packages:
+${rows.join("\n")}
+${legend}
+`);
+  }
+  /**
+   * Get the package question, with the changed packages as the default.
+   *
+   * @param input Packages and changed packages.
+   * @return Question text.
+   */
+  getPackagesQuestion(input2) {
+    const defaults = input2.changed.length ? ` [${input2.changed.join(", ")}]` : "";
+    return `Packages to release, by number, identifier or path, comma-separated, or "none" for no release${defaults}: `;
+  }
+  /**
+   * Parse the chosen packages.
+   *
+   * @param  answer Comma or space separated numbers, identifiers or paths.
+   * @param  input  Packages and changed packages.
+   * @return Package identifiers, empty for no release.
+   * @throws {ValidationError} For unknown, repeated or missing packages.
+   */
+  parsePackages(answer, input2) {
+    const tokens = answer.split(/[\s,]+/).filter(Boolean);
+    let names = input2.changed;
+    if (1 === tokens.length && "none" === tokens[0]) {
+      names = [];
+    } else if (tokens.length) {
+      names = tokens.map((token) => this.parsePackage(token, input2.packages));
+    } else if (!names.length) {
+      throw new ValidationError('Choose at least one package, or "none" for no release.');
+    }
+    const repeated = names.find((name, index) => names.indexOf(name) !== index);
+    if (repeated) {
+      throw new ValidationError(`Package "${repeated}" was chosen more than once.`);
+    }
+    return names;
+  }
+  /**
+   * Parse one chosen package.
+   *
+   * @param  token    Package number, identifier or path.
+   * @param  packages Configured packages.
+   * @return Package identifier.
+   * @throws {ValidationError} For an unknown package.
+   */
+  parsePackage(token, packages) {
+    const pkg = /^\d+$/.test(token) ? packages[Number(token) - 1] : findPackage(packages, token);
+    if (!pkg) {
+      throw new ValidationError(`Unknown package "${token}".`);
+    }
+    return pkg.name;
+  }
+  /**
+   * Parse a bump, patch by default.
+   *
+   * @param  answer Bump name.
+   * @return Bump.
+   * @throws {ValidationError} For an unknown bump.
+   */
+  parseBump(answer) {
+    const bump = answer.trim().toLowerCase() || "patch";
+    if (!CHANGESET_BUMPS.includes(bump)) {
+      throw new ValidationError(`Invalid bump "${bump}"; expected patch, minor or major.`);
+    }
+    return bump;
+  }
+  /**
+   * Parse a release note.
+   *
+   * @param  answer Release note.
+   * @return Trimmed release note.
+   * @throws {ValidationError} For an empty release note.
+   */
+  parseSummary(answer) {
+    const summary2 = answer.trim();
+    if (!summary2) {
+      throw new ValidationError("The release note must not be empty.");
+    }
+    return summary2;
+  }
+  /**
+   * Ask a question until the answer parses, printing why it didn't.
+   *
+   * @param question Question text.
+   * @param parse    Parser that throws a ValidationError for invalid answers.
+   * @return Parsed answer.
+   */
+  async askUntilValid(question, parse) {
+    let parsed;
+    while (void 0 === parsed) {
+      const answer = await this.readAnswer(question);
+      try {
+        parsed = { answer: parse(answer) };
+      } catch (error) {
+        if (!(error instanceof ValidationError)) {
+          throw error;
+        }
+        this.terminal.output.write(`${error.message}
+`);
+      }
+    }
+    return parsed.answer;
+  }
+  /**
+   * Write a question and read the next line of the input.
+   *
+   * @param  question Question text.
+   * @return Answer line.
+   * @throws {ValidationError} If the input ended.
+   */
+  async readAnswer(question) {
+    this.terminal.output.write(question);
+    const line = await this.getLines().next();
+    if (line.done) {
+      throw new ValidationError("The input ended before the changeset was complete.");
+    }
+    return line.value;
+  }
+  /**
+   * Get the lines of the input, reading it from the first question on. The
+   * interface stays in line mode, so the terminal echoes and edits the
+   * answers and Ctrl+C ends the process.
+   *
+   * @return Line iterator.
+   */
+  getLines() {
+    if (!this.lines) {
+      this.readline = createInterface({
+        input: this.terminal.input,
+        terminal: false,
+        crlfDelay: Infinity
+      });
+      this.lines = this.readline[Symbol.asyncIterator]();
+    }
+    return this.lines;
+  }
+};
+
+// ../../js/wp-release/dist/changeset-release.js
+import path9 from "node:path";
+
 // ../../js/wp-release/dist/changelog.js
+import { readFile as readFile10, writeFile as writeFile5 } from "node:fs/promises";
+import path4 from "node:path";
 async function getVersionedReleases(repository, config, releases, changesetDirectory) {
   const commits = /* @__PURE__ */ new Map();
   const getCommit = (changeset) => {
-    const cached = commits.get(changeset.fileName) ?? repository.getAddedCommit(path.join(changesetDirectory, changeset.fileName));
+    const cached = commits.get(changeset.fileName) ?? repository.getAddedCommit(path4.join(changesetDirectory, changeset.fileName));
     commits.set(changeset.fileName, cached);
     return cached;
   };
@@ -27315,10 +27884,10 @@ async function prependChangelog(directory, release, date, readmeChangelog, chang
 ${release.changelog}
 
 `;
-  const changelog = path.join(directory, "CHANGELOG.md");
+  const changelog = path4.join(directory, "CHANGELOG.md");
   let previous = "";
   try {
-    previous = await readFile8(changelog, "utf8");
+    previous = await readFile10(changelog, "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -27328,7 +27897,7 @@ ${release.changelog}
   if (!releaseHeading.test(previous)) {
     await journal.remember(changelog);
     if (void 0 !== changelogInsertAfter) {
-      await writeFile4(changelog, insertAfterMarker(previous, changelogInsertAfter, section, changelog));
+      await writeFile5(changelog, insertAfterMarker(previous, changelogInsertAfter, section, changelog));
     } else {
       const versionHeading = /^##[ \t]+v?\d+(?:\.\d+){1,2}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(?:[ \t]+.*)?$/m.exec(previous);
       const heading = /^#[ \t]+[^\r\n]+[ \t]*$/m.exec(previous);
@@ -27339,21 +27908,21 @@ ${release.changelog}
         const prefix = before ? `${before}
 
 ` : "";
-        await writeFile4(changelog, `${prefix}${section}${after}`);
+        await writeFile5(changelog, `${prefix}${section}${after}`);
       } else {
-        await writeFile4(changelog, `${section}${previous}`);
+        await writeFile5(changelog, `${section}${previous}`);
       }
     }
   }
   if (readmeChangelog) {
-    const readme = ["readme.txt", "readme.md"].map((name) => path.join(directory, name));
+    const readme = ["readme.txt", "readme.md"].map((name) => path4.join(directory, name));
     let readmeUpdated = false;
     let readmeFound = false;
     let readmeMarkerFound = false;
     let readmeAlreadyVersioned = false;
     for (const file of readme) {
       try {
-        const contents = await readFile8(file, "utf8");
+        const contents = await readFile10(file, "utf8");
         readmeFound = true;
         const defaultHeading = void 0 === changelogInsertAfter ? /^==\s*Changelog\s*==\s*$/im.exec(contents)?.[0] : void 0;
         const insertionMarker = changelogInsertAfter ?? defaultHeading;
@@ -27369,7 +27938,7 @@ ${summaries.map((item) => `* ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n")}
 
 `;
           await journal.remember(file);
-          await writeFile4(file, insertAfterMarker(contents, insertionMarker, readmeSection.trimStart(), file));
+          await writeFile5(file, insertAfterMarker(contents, insertionMarker, readmeSection.trimStart(), file));
           readmeUpdated = true;
         }
       } catch (error) {
@@ -27386,7 +27955,7 @@ ${summaries.map((item) => `* ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n")}
 async function readChangelogSection(directory, version) {
   let contents = "";
   try {
-    contents = await readFile8(path.join(directory, "CHANGELOG.md"), "utf8");
+    contents = await readFile10(path4.join(directory, "CHANGELOG.md"), "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -27403,7 +27972,7 @@ async function readChangelogSection(directory, version) {
 }
 async function getLatestChangelogVersion(directory, fallback) {
   try {
-    const contents = await readFile8(path.join(directory, "CHANGELOG.md"), "utf8");
+    const contents = await readFile10(path4.join(directory, "CHANGELOG.md"), "utf8");
     const match = /^##\s+(\d+\.\d+\.\d+)(?:\s|$)/m.exec(contents);
     return match?.[1] ?? fallback;
   } catch (error) {
@@ -27425,8 +27994,8 @@ function insertAfterMarker(contents, marker, section, file) {
 }
 
 // ../../js/wp-release/dist/changeset-config.js
-import { access as access2 } from "node:fs/promises";
-import path2 from "node:path";
+import { access as access3 } from "node:fs/promises";
+import path5 from "node:path";
 import { pathToFileURL } from "node:url";
 var __rewriteRelativeImportExtension = function(path10, preserveJsx) {
   if (typeof path10 === "string" && /^\.\.?\//.test(path10)) {
@@ -27442,8 +28011,8 @@ var CONFIG_FILES = [
   "wp-release.config.cjs"
 ];
 async function loadChangesetConfig(input2 = {}) {
-  const cwd = path2.resolve(input2.cwd ?? process.cwd());
-  const configFile = input2.configFile ? path2.resolve(cwd, input2.configFile) : await findConfigFile(cwd);
+  const cwd = path5.resolve(input2.cwd ?? process.cwd());
+  const configFile = input2.configFile ? path5.resolve(cwd, input2.configFile) : await findConfigFile(cwd);
   if (!configFile) {
     return void 0;
   }
@@ -27460,9 +28029,9 @@ async function loadChangesetConfig(input2 = {}) {
 }
 async function findConfigFile(cwd) {
   for (const fileName of CONFIG_FILES) {
-    const candidate = path2.join(cwd, fileName);
+    const candidate = path5.join(cwd, fileName);
     try {
-      await access2(candidate);
+      await access3(candidate);
       return candidate;
     } catch {
     }
@@ -27606,374 +28175,6 @@ var import_valid = __toESM(require_valid(), 1);
 import { readFile as readFile11, writeFile as writeFile6 } from "node:fs/promises";
 import path6 from "node:path";
 import { isDeepStrictEqual } from "node:util";
-
-// ../../js/wp-release/dist/changeset-packages.js
-import { readdir as readdir5 } from "node:fs/promises";
-import path5 from "node:path";
-
-// ../../js/wp-release/dist/json-files.js
-import { readFile as readFile9 } from "node:fs/promises";
-async function readJson(file) {
-  try {
-    return JSON.parse(await readFile9(file, "utf8"));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new ValidationError(`Could not read JSON manifest ${file}: ${message}`);
-  }
-}
-async function readJsonIfExists(file) {
-  try {
-    return JSON.parse(await readFile9(file, "utf8"));
-  } catch (error) {
-    if ("ENOENT" !== error.code) {
-      throw error;
-    }
-    return void 0;
-  }
-}
-
-// ../../js/wp-release/dist/version-files.js
-import { access as access3, readFile as readFile10, writeFile as writeFile5 } from "node:fs/promises";
-import path4 from "node:path";
-
-// ../../js/wp-release/dist/tag-format.js
-import path3 from "node:path";
-function formatTag(format, pkg, version) {
-  const type = pkg.group.tagType ?? defaultTagType(pkg.path, pkg.type);
-  return format.replaceAll("{name}", pkg.name).replaceAll("{slug}", "." === pkg.path ? path3.basename(pkg.directory) : path3.basename(pkg.path)).replaceAll("{path}", pkg.path).replaceAll("{type}", type).replaceAll("{version}", version);
-}
-function formatTemplatePrefix(pattern, packagePath, tagType) {
-  return pattern.replaceAll("{path}", packagePath).replaceAll("{type}", tagType ?? defaultTagType(packagePath)).replaceAll("{name}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{slug}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{version}", "");
-}
-function defaultTagType(packagePath, type) {
-  if ("." === packagePath && type) {
-    return type;
-  }
-  const first = packagePath.split("/")[0] ?? "package";
-  const irregular = {
-    actions: "action",
-    plugins: "plugin",
-    themes: "theme",
-    php: "php",
-    js: "js"
-  };
-  return irregular[first] ?? first.replace(/s$/, "");
-}
-
-// ../../js/wp-release/dist/versions.js
-var VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
-function isVersion(version) {
-  return VERSION_PATTERN.test(version);
-}
-function isPrerelease2(version) {
-  return Boolean(VERSION_PATTERN.exec(version)?.[4]);
-}
-function compareVersions(left, right) {
-  const [leftCore = "", leftPre] = splitPrerelease(left);
-  const [rightCore = "", rightPre] = splitPrerelease(right);
-  const a = leftCore.split(".").map(Number);
-  const b = rightCore.split(".").map(Number);
-  const core = (a[0] ?? 0) - (b[0] ?? 0) || (a[1] ?? 0) - (b[1] ?? 0) || (a[2] ?? 0) - (b[2] ?? 0);
-  if (core || leftPre === rightPre) {
-    return core;
-  }
-  if (void 0 === leftPre || void 0 === rightPre) {
-    return void 0 === leftPre ? 1 : -1;
-  }
-  return comparePrerelease(leftPre.split("."), rightPre.split("."));
-}
-function splitPrerelease(version) {
-  const index = version.indexOf("-");
-  return -1 === index ? [version] : [version.slice(0, index), version.slice(index + 1)];
-}
-function comparePrerelease(left, right) {
-  const [a, ...leftRest] = left;
-  const [b, ...rightRest] = right;
-  if (void 0 === a || void 0 === b) {
-    return (void 0 === a ? 0 : 1) - (void 0 === b ? 0 : 1);
-  }
-  const order = compareIdentifier(a, b);
-  return order || comparePrerelease(leftRest, rightRest);
-}
-function compareIdentifier(a, b) {
-  const aNumeric = /^\d+$/.test(a);
-  const bNumeric = /^\d+$/.test(b);
-  if (aNumeric && bNumeric) {
-    return Number(a) - Number(b);
-  }
-  if (aNumeric || bNumeric) {
-    return aNumeric ? -1 : 1;
-  }
-  return Number(a > b) - Number(a < b);
-}
-
-// ../../js/wp-release/dist/version-files.js
-async function readVersion(repository, directory, descriptor, relativePath, tagType) {
-  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
-    const manifest = await readJson(path4.join(directory, descriptor.file));
-    const version = manifest[descriptor.field];
-    if ("string" === typeof version && version.trim()) {
-      return version;
-    }
-    throw new ValidationError(`Missing ${descriptor.file}#${descriptor.field} in ${directory}.`);
-  }
-  if ("git-tag" === descriptor.kind) {
-    const pattern = descriptor.pattern ?? "{path}/{version}";
-    const tags = await repository.listTags(formatTemplatePrefix(pattern, relativePath, tagType));
-    const versions = tags.map((tag) => tag.match(/(?:^|\/|v)(\d+\.\d+\.\d+)$/)?.[1]).filter((item) => Boolean(item));
-    versions.sort((a, b) => compareVersions(b, a));
-    if (versions[0]) {
-      return versions[0];
-    }
-    throw new ValidationError(`No git tag matches ${pattern} for ${relativePath}.`);
-  }
-  if ("php-constant" === descriptor.kind) {
-    const file2 = path4.join(directory, descriptor.file);
-    const contents2 = await readFile10(file2, "utf8");
-    const versions = findConstantValues(contents2, descriptor.constant);
-    if (versions[0]) {
-      return versions[0];
-    }
-    throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
-  }
-  const file = path4.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile10(file, "utf8");
-  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
-  const match = new RegExp(`^\\s*\\*?\\s*${label}:\\s*([^\\r\\n]+)`, "im").exec(contents);
-  if (!match) {
-    throw new ValidationError(`Missing ${label} header in ${file}.`);
-  }
-  return match[1]?.trim() ?? "";
-}
-async function writeVersion(directory, descriptor, version, journal) {
-  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
-    const file2 = path4.join(directory, descriptor.file);
-    const contents2 = await readFile10(file2, "utf8");
-    const manifest = JSON.parse(contents2);
-    if ("composer-json" === descriptor.kind && descriptor.ifPresent && !Object.hasOwn(manifest, descriptor.field)) {
-      return;
-    }
-    manifest[descriptor.field] = version;
-    await journal.remember(file2);
-    await writeFile5(file2, `${JSON.stringify(manifest, null, "	")}
-`);
-    return;
-  }
-  if ("php-constant" === descriptor.kind) {
-    const file2 = path4.join(directory, descriptor.file);
-    const contents2 = await readFile10(file2, "utf8");
-    const constant = escapeRegExp(descriptor.constant);
-    const definePattern = new RegExp(`(\\bdefine\\s*\\(\\s*(['"])${constant}\\2\\s*,\\s*)(['"])(.*?)\\3`, "g");
-    const declarationPattern = new RegExp(`(\\bconst\\s+${constant}\\s*=\\s*)(['"])(.*?)\\2`, "g");
-    const updated = contents2.replace(definePattern, (_match, prefix, _nameQuote, quote) => `${prefix}${quote}${version}${quote}`).replace(declarationPattern, (_match, prefix, quote) => `${prefix}${quote}${version}${quote}`);
-    if (updated === contents2) {
-      throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
-    }
-    await journal.remember(file2);
-    await writeFile5(file2, updated);
-    return;
-  }
-  if ("wordpress-stable-tag" === descriptor.kind && descriptor.ifPresent && !await versionFileExists(directory, descriptor.kind, descriptor.file)) {
-    return;
-  }
-  const file = path4.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile10(file, "utf8");
-  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
-  const expression = new RegExp(`(^\\s*\\*?\\s*${label}:\\s*)[^\\r\\n]+`, "im");
-  if (!expression.test(contents)) {
-    throw new ValidationError(`Missing ${label} header in ${file}.`);
-  }
-  await journal.remember(file);
-  await writeFile5(file, contents.replace(expression, `$1${version}`));
-}
-async function verifyVersionTargets(repository, pkg, expected) {
-  for (const target of pkg.versionConfig.to) {
-    let actual;
-    if ("composer-json" === target.kind && target.ifPresent && !Object.hasOwn(await readJson(path4.join(pkg.directory, target.file)), target.field)) {
-      actual = void 0;
-    } else if ("wordpress-stable-tag" === target.kind && target.ifPresent && !await versionFileExists(pkg.directory, target.kind, target.file)) {
-      actual = void 0;
-    } else {
-      actual = await readVersion(repository, pkg.directory, target, pkg.path, pkg.group.tagType);
-    }
-    if (void 0 !== actual && actual !== expected) {
-      throw new ValidationError(`Version mismatch for ${pkg.name}: expected ${expected}, found ${actual}.`);
-    }
-  }
-}
-async function getVersionFile(directory, kind, configuredFile) {
-  if (configuredFile) {
-    return configuredFile;
-  }
-  if ("wordpress-plugin-header" === kind) {
-    const file = await findMainPluginFile({ dir: directory });
-    if (file) {
-      return file;
-    }
-    throw new ValidationError(`Could not find a plugin header file in ${directory}.`);
-  }
-  if ("wordpress-stable-tag" === kind) {
-    for (const file of ["readme.txt", "readme.md"]) {
-      try {
-        await access3(path4.join(directory, file));
-        return file;
-      } catch {
-      }
-    }
-    throw new ValidationError(`Could not find readme.txt or readme.md in ${directory}.`);
-  }
-  return "style.css";
-}
-async function versionFileExists(directory, kind, configuredFile) {
-  if (configuredFile) {
-    try {
-      await access3(path4.join(directory, configuredFile));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  if ("wordpress-stable-tag" === kind) {
-    const files = await Promise.all(["readme.txt", "readme.md"].map(async (file) => {
-      try {
-        await access3(path4.join(directory, file));
-        return true;
-      } catch {
-        return false;
-      }
-    }));
-    return files.some(Boolean);
-  }
-  return true;
-}
-
-// ../../js/wp-release/dist/changeset-packages.js
-var SKIPPED_DIRECTORIES = [".git", "node_modules", "vendor", "dist"];
-async function discoverPackages(repository, config) {
-  const root = path5.resolve(repository.cwd, config.root ?? ".");
-  const packages = [];
-  const hasRecursiveGlob = config.packages.some((item) => item.glob.split("/").includes("**"));
-  const directories = await findDirectories(root, "", hasRecursiveGlob ? Infinity : Math.max(1, ...config.packages.map((item) => item.glob.split("/").length + 2)));
-  for (const group of config.packages) {
-    const matcher = globRegExp(group.glob);
-    const candidates = matcher.test(".") ? [".", ...directories] : directories;
-    const matches = candidates.filter((item) => matcher.test(item) && !(group.exclude ?? []).some((excluded) => globRegExp(excluded).test(item))).sort();
-    if (!matches.length) {
-      throw new ValidationError(`Package glob "${group.glob}" did not match any directories under ${root}.`);
-    }
-    for (const relativePath of matches) {
-      const directory = path5.join(root, relativePath);
-      const name = await packageName(directory, relativePath, group.idFrom ?? "path");
-      const currentVersion = await readVersion(repository, directory, group.version.from, relativePath, group.tagType);
-      if (packages.some((pkg) => pkg.name === name)) {
-        throw new ValidationError(`Package identifier "${name}" is configured more than once.`);
-      }
-      packages.push({
-        name,
-        directory,
-        path: relativePath,
-        type: packageType(group),
-        currentVersion,
-        group,
-        versionConfig: group.version
-      });
-    }
-  }
-  return packages;
-}
-function assertKnownPackages(packages, names) {
-  names.forEach((name) => {
-    if (!packages.some((pkg) => pkg.name === name)) {
-      throw new ValidationError(`Unknown package "${name}".`);
-    }
-  });
-}
-async function getChangedPackages(repository, packages, since) {
-  const changedFiles = await repository.getChangedFiles(since);
-  const filesByPackage = {};
-  const changed = packages.filter((pkg) => {
-    const packageFromRepo = repository.relativePath(pkg.directory);
-    const matchingFiles = "" === packageFromRepo ? changedFiles : changedFiles.filter((file) => file === packageFromRepo || file.startsWith(`${packageFromRepo}/`));
-    if (matchingFiles.length) {
-      filesByPackage[pkg.name] = matchingFiles;
-    }
-    return matchingFiles.length > 0;
-  });
-  return { packages: changed, filesByPackage };
-}
-function toChangesetPackage(pkg) {
-  return {
-    name: pkg.name,
-    directory: pkg.directory,
-    path: pkg.path,
-    type: pkg.type,
-    currentVersion: pkg.currentVersion
-  };
-}
-function globRegExp(glob) {
-  const escaped = glob.split("/").map((part) => {
-    if ("**" === part) {
-      return ".*";
-    }
-    return part.replaceAll(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", "[^/]*").replaceAll("?", "[^/]");
-  }).join("/");
-  return new RegExp(`^${escaped}$`);
-}
-async function findDirectories(root, prefix = "", maxDepth = 5) {
-  let entries;
-  try {
-    entries = await readdir5(path5.join(root, prefix), {
-      withFileTypes: true
-    });
-  } catch (error) {
-    if ("ENOENT" === error.code) {
-      return [];
-    }
-    throw error;
-  }
-  const directories = entries.filter((item) => item.isDirectory() && !SKIPPED_DIRECTORIES.includes(item.name));
-  if (prefix.split(path5.sep).filter(Boolean).length >= maxDepth) {
-    return directories.map((item) => path5.join(prefix, item.name));
-  }
-  const children = await Promise.all(directories.map((item) => findDirectories(root, path5.join(prefix, item.name), maxDepth)));
-  return [
-    ...directories.map((item) => path5.join(prefix, item.name)),
-    ...children.flat()
-  ];
-}
-async function packageName(directory, relativePath, idFrom) {
-  if ("path" === idFrom) {
-    if ("." === relativePath) {
-      return path5.basename(directory);
-    }
-    return relativePath.split(path5.sep).join("/");
-  }
-  const [file, field] = idFrom.split("#");
-  if (!file || !field) {
-    throw new ValidationError(`Invalid package identifier source "${idFrom}".`);
-  }
-  const manifest = await readJson(path5.join(directory, file));
-  const name = manifest[field];
-  if ("string" !== typeof name || !name.trim()) {
-    throw new ValidationError(`Expected ${file}#${field} in ${directory}.`);
-  }
-  return name;
-}
-function packageType(group) {
-  const kind = group.version.from.kind;
-  if ("wordpress-plugin-header" === kind) {
-    return "plugin";
-  }
-  if ("wordpress-theme-header" === kind) {
-    return "theme";
-  }
-  if ("package-json" === kind) {
-    return "npm";
-  }
-  return "other";
-}
-
-// ../../js/wp-release/dist/changeset-dependents.js
 var DEFAULT_SECTIONS = ["dependencies", "optionalDependencies"];
 async function applyDependents(releases, packages, config) {
   const rule = config.dependents;
@@ -28296,11 +28497,12 @@ async function readChangesets(directory) {
   }
   return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile12(path7.join(directory, name), "utf8"), name)));
 }
-async function readChangesetsSince(repository, directory, changesets, since) {
+async function readChangesetsSince(repository, directory, changesets, since, uncommitted = false) {
   const relativeDirectory = repository.relativePath(directory);
   const changedFiles = new Set(await repository.getChangedFiles(since, {
     directory,
-    diffFilter: "ACMR"
+    diffFilter: "ACMR",
+    uncommitted
   }));
   return changesets.filter((changeset) => changedFiles.has(path7.posix.join(relativeDirectory, changeset.fileName)));
 }
@@ -28537,21 +28739,33 @@ var ReleaseRepository = class {
     ]);
   }
   /**
-   * List the files changed between the merge base of a ref and HEAD.
+   * List the files changed between the merge base of a ref and HEAD, or the
+   * working tree with the uncommitted option, which adds untracked files.
    *
    * @param since   Base ref, like origin/main.
-   * @param options Directory and diff filter.
+   * @param options Directory, diff filter and uncommitted files.
    * @return Changed files relative to the repository root.
    */
   async getChangedFiles(since, options2 = {}) {
+    const pathspec = options2.directory ? ["--", this.relativePath(options2.directory)] : [];
+    const range = options2.uncommitted ? (await this.run(["merge-base", since, "HEAD"])).trim() : `${since}...HEAD`;
     const output = await this.run([
       "diff",
       "--name-only",
       ...options2.diffFilter ? [`--diff-filter=${options2.diffFilter}`] : [],
-      `${since}...HEAD`,
-      ...options2.directory ? ["--", this.relativePath(options2.directory)] : []
+      range,
+      ...pathspec
     ]);
-    return output.trim().split(/\r?\n/).filter(Boolean);
+    const untracked = options2.uncommitted ? await this.run([
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+      "--full-name",
+      ...pathspec
+    ]) : "";
+    const files = `${output}
+${untracked}`.split(/\r?\n/).filter(Boolean);
+    return [...new Set(files)];
   }
   /**
    * Read a file as of the merge base of a ref and HEAD, the side that
@@ -28640,8 +28854,17 @@ var ChangesetRelease = class {
   async add(options2) {
     const config = await this.requireConfig();
     const packages = await discoverPackages(this.repository, config);
-    assertKnownPackages(packages, Object.keys(options2.packages));
-    return writeChangeset(this.getChangesetDirectory(config), options2.packages, options2.summary, options2.name);
+    const entries = Object.entries(options2.packages);
+    const names = resolvePackageNames(packages, entries.map(([name]) => name));
+    const resolved = {};
+    entries.forEach(([, bump], index) => {
+      const name = names[index] ?? "";
+      if (Object.hasOwn(resolved, name)) {
+        throw new ValidationError(`Package "${name}" was passed more than once.`);
+      }
+      resolved[name] = bump;
+    });
+    return writeChangeset(this.getChangesetDirectory(config), resolved, options2.summary, options2.name);
   }
   /**
    * Apply pending package versions and changelogs. A failed run restores
@@ -28655,9 +28878,10 @@ var ChangesetRelease = class {
     const context = await this.requireContext();
     const { config, packages } = context;
     const withDependents = options2.dependents ?? true;
+    const selected = options2.packages ? resolvePackageNames(packages, options2.packages) : void 0;
     let releasePlan = context.plan;
-    if (options2.packages) {
-      releasePlan = expandDependentsPlan(await selectReleasePlan(context.plan, packages, options2.packages, config, withDependents));
+    if (selected) {
+      releasePlan = expandDependentsPlan(await selectReleasePlan(context.plan, packages, selected, config, withDependents));
     } else if (!withDependents) {
       releasePlan = stripDependentsPlan(context.plan);
     }
@@ -28667,7 +28891,7 @@ var ChangesetRelease = class {
     const date = options2.date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
     const releases = await getVersionedReleases(this.repository, config, releasePlan.releases, this.getChangesetDirectory(config));
     if (!options2.dryRun) {
-      await this.writeReleases(context, releasePlan, releases, date, options2.packages);
+      await this.writeReleases(context, releasePlan, releases, date, selected);
     }
     return {
       changesets: releasePlan.changesets,
@@ -28690,7 +28914,7 @@ var ChangesetRelease = class {
       throw new ValidationError("Listing untagged releases cannot be combined with pushing tags.");
     }
     const context = await this.requireContext();
-    const selected = selectTagPackages(context.packages, options2.packages ?? [], options2.version);
+    const selected = selectTagPackages(context.packages, resolvePackageNames(context.packages, options2.packages ?? []), options2.version);
     const packages = options2.since ? (await getChangedPackages(this.repository, selected, options2.since)).packages : selected;
     const results = [];
     const dryRun = options2.dryRun || options2.untagged;
@@ -28742,9 +28966,9 @@ var ChangesetRelease = class {
     const { config, packages, plan } = await this.requireContext();
     const { changesets, releases } = plan;
     const since = options2.since ?? (config.baseBranch ? `origin/${config.baseBranch}` : void 0);
-    const changed = since ? await getChangedPackages(this.repository, packages, since) : { packages: [], filesByPackage: {} };
+    const changed = since ? await getChangedPackages(this.repository, packages, since, options2.uncommitted) : { packages: [], filesByPackage: {} };
     const changedPackages = changed.packages.map((pkg) => pkg.name);
-    const changesetsInDiff = since ? await readChangesetsSince(this.repository, this.getChangesetDirectory(config), changesets, since) : [];
+    const changesetsInDiff = since ? await readChangesetsSince(this.repository, this.getChangesetDirectory(config), changesets, since, options2.uncommitted) : [];
     const hasEmptyChangeset = changesetsInDiff.some((changeset) => 0 === Object.keys(changeset.packages).length);
     const bundled = since ? await findBundledPinChanges({
       changed,
@@ -28757,6 +28981,7 @@ var ChangesetRelease = class {
     const missingChangesets = hasEmptyChangeset ? [] : changedPackages.filter((name) => !hasChangeset(changesetsInDiff, name) && !bundled.has(name));
     const warnings = config.dependents ? await collectPinDriftWarnings(config, packages) : [];
     return {
+      ...since ? { since } : {},
       changesets,
       releases,
       changedPackages,
@@ -28919,9 +29144,6 @@ var ChangesetRelease = class {
     return path9.resolve(this.cwd, config.changesets ?? ".changeset");
   }
 };
-async function addChangeset(input2) {
-  return new ChangesetRelease(input2).add(input2);
-}
 async function versionChangesets(input2) {
   return new ChangesetRelease(input2).version(input2);
 }
@@ -28938,41 +29160,57 @@ var changesetAddArgs = {
   bump: { type: "string", multiple: true },
   summary: { type: "string" },
   empty: { type: "boolean" },
+  since: { type: "string" },
   name: { type: "string" }
 };
+function parseBump(bump, packageName2) {
+  if (!CHANGESET_BUMPS.includes(bump)) {
+    const target = packageName2 ? ` for package "${packageName2}"` : "";
+    throw new ValidationError(`Invalid bump "${bump}"${target}; expected patch, minor or major.`);
+  }
+  return bump;
+}
 function parseChangesetAddArgs(values) {
   const names = getStrings(values, "package");
   const bumps = getStrings(values, "bump");
   const summary2 = getString(values, "summary")?.trim();
   const empty = getBoolean(values, "empty");
+  const since = getString(values, "since");
   const name = getString(values, "name");
-  if (empty && (names.length || bumps.length || summary2)) {
-    throw new ValidationError("--empty cannot be combined with --package, --bump or --summary.");
+  if (empty && (names.length || bumps.length || summary2 || since)) {
+    throw new ValidationError("--empty cannot be combined with --package, --bump, --summary or --since.");
   }
-  if (!empty && (!names.length || names.length !== bumps.length)) {
+  if (names.length && names.length !== bumps.length) {
     throw new ValidationError("Pass matching repeated --package <name> and --bump <patch|minor|major> options, or use --empty.");
   }
-  if (!empty && !summary2) {
-    throw new ValidationError("--summary <text> is required unless --empty is set.");
+  if (!names.length && bumps.length > 1) {
+    throw new ValidationError("Pass a single --bump without --package to release the changed packages, or pair each --bump with a --package.");
+  }
+  if (names.length && void 0 !== since) {
+    throw new ValidationError("--since selects the changed packages, so it cannot be combined with --package.");
+  }
+  if ("" === since?.trim()) {
+    throw new ValidationError("--since <ref> must not be empty.");
+  }
+  if (bumps.length && !summary2) {
+    throw new ValidationError("--summary <text> is required with --bump.");
   }
   if (name && !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name)) {
     throw new ValidationError("--name must contain only letters, numbers, dots, underscores or hyphens.");
   }
   const packages = {};
   names.forEach((packageName2, index) => {
-    const bump = bumps[index];
     if (Object.hasOwn(packages, packageName2)) {
       throw new ValidationError(`Package "${packageName2}" was passed more than once.`);
     }
-    if (!CHANGESET_BUMPS.includes(bump)) {
-      throw new ValidationError(`Invalid bump "${bump}" for package "${packageName2}"; expected patch, minor or major.`);
-    }
-    packages[packageName2] = bump;
+    packages[packageName2] = parseBump(bumps[index] ?? "", packageName2);
   });
   return {
     packages,
-    summary: summary2 ?? "",
     empty,
+    ...!names.length && bumps.length ? { bump: parseBump(bumps[0] ?? "") } : {},
+    ...summary2 ? { summary: summary2 } : {},
+    ...since ? { since } : {},
     ...name ? { name } : {}
   };
 }
@@ -29052,35 +29290,98 @@ function parseChangesetTagArgs(values) {
 }
 
 // ../../js/wp-release/dist/commands/changeset-add.js
+async function getChangedPackageBumps(release, input2, bump) {
+  const status = await release.getStatus({
+    ...input2.since ? { since: input2.since } : {},
+    uncommitted: true
+  });
+  if (!status.missingChangesets.length) {
+    const since = status.since ? ` since ${status.since}` : "";
+    throw new ValidationError(`No package changed${since} without a changeset. Pass --package <name> to choose the packages.`);
+  }
+  return Object.fromEntries(status.missingChangesets.map((name) => [name, bump]));
+}
+async function askChangeset(release, input2, terminal) {
+  const packages = await release.getPackages();
+  const status = await release.getStatus({
+    ...input2.since ? { since: input2.since } : {},
+    uncommitted: true
+  });
+  const prompt = new ChangesetPrompt(terminal);
+  try {
+    return await prompt.ask({
+      packages,
+      changed: status.missingChangesets,
+      ...status.since ? { since: status.since } : {},
+      ...input2.summary ? { summary: input2.summary } : {}
+    });
+  } finally {
+    prompt.close();
+  }
+}
+async function getChangeset(release, input2, terminal) {
+  const summary2 = input2.summary ?? "";
+  let changeset;
+  if (input2.empty) {
+    changeset = { packages: {}, summary: summary2 };
+  } else if (Object.keys(input2.packages).length) {
+    changeset = { packages: input2.packages, summary: summary2 };
+  } else if (input2.bump) {
+    changeset = {
+      packages: await getChangedPackageBumps(release, input2, input2.bump),
+      summary: summary2
+    };
+  } else if (terminal) {
+    changeset = await askChangeset(release, input2, terminal);
+  } else {
+    throw new ValidationError("Pass matching repeated --package <name> and --bump <patch|minor|major> options, a single --bump for the changed packages, or --empty.");
+  }
+  return changeset;
+}
 var changeset_add_default = {
   name: "changeset-add",
-  usage: "changeset-add (--empty | --package <name> --bump <bump> ...) [options]",
+  usage: "changeset-add [--empty | --package <name> --bump <bump> ... | --bump <bump>] [options]",
   summary: "Add a package release note for the next release PR.",
   help: `Options:
-  --package <name>       Package identifier (repeatable)
+  --package <name>       Package identifier, or its path under the configured
+                         root (repeatable)
   --bump <bump>          patch, minor or major (repeatable, in package order)
   --summary <text>       Customer-facing release note
   --empty                Record that this change does not need a release
+  --since <ref>          Compare changed files with this git ref (default:
+                         origin/<baseBranch>)
   --name <name>          Changeset filename (default: random identifier)
 
 Use --package and --bump pairs for package releases, or --empty for changes
-that should pass the status check without producing a release.`,
+that should pass the status check without producing a release. A single
+--bump without --package releases the packages that changed since the base
+ref, including uncommitted files, and have no changeset yet. Without
+--package and --bump in a terminal, the command asks for the packages, with
+the changed ones preselected, their bumps and the release note.`,
   options: changesetAddArgs,
-  async run({ values, cwd, configFile, logger: logger2 }) {
+  async run({ values, cwd, configFile, logger: logger2, terminal }) {
     const input2 = parseChangesetAddArgs(values);
-    const file = await addChangeset({
+    const release = new ChangesetRelease({
       cwd,
-      ...configFile ? { configFile } : {},
-      packages: input2.packages,
-      summary: input2.summary,
+      ...configFile ? { configFile } : {}
+    });
+    const changeset = await getChangeset(release, input2, terminal);
+    const file = await release.add({
+      packages: changeset.packages,
+      summary: changeset.summary,
       ...input2.name ? { name: input2.name } : {}
     });
+    const names = resolvePackageNames(await release.getPackages(), Object.keys(changeset.packages));
+    const packages = Object.fromEntries(Object.values(changeset.packages).map((bump, index) => [
+      names[index],
+      bump
+    ]));
     logger2.info(`Created ${file}.`);
     return {
       exitCode: 0,
       result: {
         file,
-        packages: input2.packages
+        packages
       }
     };
   }
@@ -29160,7 +29461,8 @@ var changeset_version_default = {
   help: `Options:
   --dry-run              Print the release plan without writing files
   --date <YYYY-MM-DD>    Changelog date (default: today)
-  --package <name>       Version only this package (repeatable)
+  --package <name>       Version only this package, by identifier or path
+                         under the configured root (repeatable)
   --no-dependents        Leave the configured dependents of the selected sources out
 
 Updates configured version files, prepends changelog entries and removes the
@@ -29207,7 +29509,8 @@ var changeset_tag_default = {
                          creating them
   --untagged             List only releases without a tag, without creating tags
   --since <ref>          Tag packages changed since this git ref
-  --package <name>       Tag only this package (repeatable)
+  --package <name>       Tag only this package, by identifier or path under
+                         the configured root (repeatable)
   --version <version>    Fail unless the single --package is at this version;
                          the version to tag for packages versioned by git tags
   --push                 Push newly created tags to origin, one at a time
