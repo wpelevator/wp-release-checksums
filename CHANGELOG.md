@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0 (2026-10-12)
+
+- Expose opt-in Git `export-ignore` exclusions through the release actions. ([#236](https://github.com/wpelevator/basement/pull/236) by @kasparsd, [`f4cd6f1`](https://github.com/wpelevator/basement/commit/f4cd6f1ab2c8f1f34050547e1047b5a21047220c))
+
 ## 0.2.2 (2026-10-11)
 
 - Bundle wp-release 0.7.0.
