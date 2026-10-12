@@ -27605,6 +27605,7 @@ var import_satisfies = __toESM(require_satisfies(), 1);
 var import_valid = __toESM(require_valid(), 1);
 import { readFile as readFile11, writeFile as writeFile6 } from "node:fs/promises";
 import path6 from "node:path";
+import { isDeepStrictEqual } from "node:util";
 
 // ../../js/wp-release/dist/changeset-packages.js
 import { readdir as readdir5 } from "node:fs/promises";
@@ -28087,25 +28088,51 @@ async function assertDependentsSourcesReleased(plan, fullPlan, packages, config)
     }
   }
 }
-async function findBundledPinChanges(changed, changesetsInDiff, packages, config) {
-  const candidates = changed.packages.filter((pkg) => void 0 !== config.dependents && !hasChangeset(changesetsInDiff, pkg.name) && (changed.filesByPackage[pkg.name] ?? []).every((file) => "package.json" === path6.basename(file)));
+async function findBundledPinChanges(input2) {
+  const { changed, changesetsInDiff, packages, config, repository, since } = input2;
+  const candidates = changed.packages.filter((pkg) => void 0 !== config.dependents && !hasChangeset(changesetsInDiff, pkg.name) && (changed.filesByPackage[pkg.name] ?? []).every((file) => repository.relativePath(manifestFile(pkg)) === file));
   const bundled = await Promise.all(candidates.map(async (pkg) => {
-    const sources = await collectDeclarationNames(pkg, packages, config);
-    return sources.some((source) => hasChangeset(changesetsInDiff, source)) ? pkg.name : void 0;
+    const identifiers = await collectReleasedIdentifiers(pkg, packages, config, changesetsInDiff);
+    const pinsOnly = identifiers.length > 0 && await changesOnlyPins({
+      pkg,
+      identifiers,
+      sections: dependentsSections(config.dependents),
+      repository,
+      since
+    });
+    return pinsOnly ? pkg.name : void 0;
   }));
   return new Set(bundled.filter((name) => void 0 !== name));
 }
-function hasChangeset(changesets, name) {
-  return changesets.some((changeset) => Object.hasOwn(changeset.packages, name));
-}
-async function collectDeclarationNames(pkg, packages, config) {
-  const names = [];
+async function collectReleasedIdentifiers(pkg, packages, config, changesets) {
+  const identifiers = [];
   for (const source of packages) {
-    if (pkg.name !== source.name && (await findNpmSpecs(pkg, source, dependentsSections(config.dependents))).length > 0) {
-      names.push(source.name);
+    const specs = pkg.name !== source.name && hasChangeset(changesets, source.name) ? await findNpmSpecs(pkg, source, dependentsSections(config.dependents)) : [];
+    identifiers.push(...specs.map(({ name }) => name));
+  }
+  return identifiers;
+}
+async function changesOnlyPins(input2) {
+  const { pkg, identifiers, sections, repository, since } = input2;
+  const base = await repository.readFileAtMergeBase(since, manifestFile(pkg));
+  const head = await readJsonIfExists(manifestFile(pkg));
+  return void 0 !== base && void 0 !== head && isDeepStrictEqual(withoutSpecs(JSON.parse(base), sections, identifiers), withoutSpecs(head, sections, identifiers));
+}
+function withoutSpecs(manifest, sections, identifiers) {
+  const stripped = { ...manifest };
+  for (const section of sections) {
+    const specs = manifest[section];
+    if ("object" === typeof specs && null !== specs) {
+      stripped[section] = Object.fromEntries(Object.entries(specs).filter(([name]) => !identifiers.includes(name)));
     }
   }
-  return names;
+  return stripped;
+}
+function manifestFile(pkg) {
+  return path6.join(pkg.directory, "package.json");
+}
+function hasChangeset(changesets, name) {
+  return changesets.some((changeset) => Object.hasOwn(changeset.packages, name));
 }
 async function collectDependencyNames(pkg, packages, config) {
   const names = [];
@@ -28527,6 +28554,26 @@ var ReleaseRepository = class {
     return output.trim().split(/\r?\n/).filter(Boolean);
   }
   /**
+   * Read a file as of the merge base of a ref and HEAD, the side that
+   * getChangedFiles() diffs against.
+   *
+   * @param since Base ref, like origin/main.
+   * @param file  Absolute or relative file path.
+   * @return File contents, or undefined when the file doesn't exist there.
+   */
+  async readFileAtMergeBase(since, file) {
+    const base = (await this.run(["merge-base", since, "HEAD"])).trim();
+    const relative4 = this.relativePath(file);
+    const listed = await this.run([
+      "ls-tree",
+      "--name-only",
+      base,
+      "--",
+      relative4
+    ]);
+    return "" === listed.trim() ? void 0 : this.run(["show", `${base}:${relative4}`]);
+  }
+  /**
    * Run git log and parse the commits.
    *
    * @param args Arguments after the format option.
@@ -28699,7 +28746,14 @@ var ChangesetRelease = class {
     const changedPackages = changed.packages.map((pkg) => pkg.name);
     const changesetsInDiff = since ? await readChangesetsSince(this.repository, this.getChangesetDirectory(config), changesets, since) : [];
     const hasEmptyChangeset = changesetsInDiff.some((changeset) => 0 === Object.keys(changeset.packages).length);
-    const bundled = await findBundledPinChanges(changed, changesetsInDiff, packages, config);
+    const bundled = since ? await findBundledPinChanges({
+      changed,
+      changesetsInDiff,
+      packages,
+      config,
+      repository: this.repository,
+      since
+    }) : /* @__PURE__ */ new Set();
     const missingChangesets = hasEmptyChangeset ? [] : changedPackages.filter((name) => !hasChangeset(changesetsInDiff, name) && !bundled.has(name));
     const warnings = config.dependents ? await collectPinDriftWarnings(config, packages) : [];
     return {
