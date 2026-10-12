@@ -59,6 +59,7 @@ function addSelection( args: string[] ): void {
 	}
 
 	addValue( args, '--exclude', input( 'exclude' ) );
+	addBoolean( args, '--exclude-gitattributes', 'exclude-gitattributes' );
 }
 
 /**

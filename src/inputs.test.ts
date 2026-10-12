@@ -19,6 +19,7 @@ test( 'maps inputs to wp-release checksums flags', () => {
 				INPUT_SLUG: 'my-theme',
 				INPUT_TYPE: 'theme',
 				INPUT_DISTIGNORE: 'false',
+				'INPUT_EXCLUDE-GITATTRIBUTES': 'true',
 				INPUT_FORCE: 'true',
 			},
 			getChecksumsArgs
@@ -29,6 +30,7 @@ test( 'maps inputs to wp-release checksums flags', () => {
 			'--slug',
 			'my-theme',
 			'--no-distignore',
+			'--exclude-gitattributes',
 			'--type',
 			'theme',
 			'--force',
