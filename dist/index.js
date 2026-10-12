@@ -27226,6 +27226,8 @@ function defaultTagType(packagePath, type) {
 
 // ../../js/wp-release/dist/versions.js
 var VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
+var PRERELEASE_INPUT_PATTERN = /^([A-Za-z][0-9A-Za-z-]*)(?:\.(0|[1-9]\d*))?$/;
+var SNAPSHOT_ID_PATTERN = /^[A-Za-z][0-9A-Za-z-]*(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*$/;
 function isVersion(version) {
   return VERSION_PATTERN.test(version);
 }
@@ -27269,6 +27271,35 @@ function compareIdentifier(a, b) {
     return aNumeric ? -1 : 1;
   }
   return Number(a > b) - Number(a < b);
+}
+function getPrereleaseVersion(stable, prerelease, existing) {
+  const match = PRERELEASE_INPUT_PATTERN.exec(prerelease);
+  if (!match) {
+    throw new ValidationError(`Invalid pre-release "${prerelease}"; expected an identifier with an optional number, like rc or rc.1.`);
+  }
+  if (!isVersion(stable) || isPrerelease2(stable)) {
+    throw new ValidationError(`Cannot release "${stable}" as a pre-release: expected a stable x.y.z version.`);
+  }
+  const identifier = match[1] ?? "";
+  const version = match[2] ? `${stable}-${prerelease}` : `${stable}-${identifier}.${getNextPrereleaseNumber(`${stable}-${identifier}.`, existing)}`;
+  if (existing.includes(version)) {
+    throw new ValidationError(`Version ${version} already exists; pass a pre-release without a number to release the next one.`);
+  }
+  return version;
+}
+function getNextPrereleaseNumber(prefix, existing) {
+  const numbers = existing.filter((version) => version.startsWith(prefix)).map((version) => version.slice(prefix.length)).filter((number) => /^\d+$/.test(number)).map(Number);
+  return Math.max(0, ...numbers) + 1;
+}
+function getSnapshotVersion(stable, id, time) {
+  if (!SNAPSHOT_ID_PATTERN.test(id)) {
+    throw new ValidationError(`Invalid snapshot "${id}"; expected SemVer pre-release identifiers that start with a letter, like pr-251.`);
+  }
+  if (!isVersion(stable) || isPrerelease2(stable)) {
+    throw new ValidationError(`Cannot release "${stable}" as a snapshot: expected a stable x.y.z version.`);
+  }
+  const timestamp = time.toISOString().replace(/\D/g, "").slice(0, 14);
+  return `${stable}-${id}.${timestamp}`;
 }
 
 // ../../js/wp-release/dist/version-files.js
@@ -27337,7 +27368,7 @@ async function writeVersion(directory, descriptor, version, journal) {
     await writeFile4(file2, updated);
     return;
   }
-  if ("wordpress-stable-tag" === descriptor.kind && descriptor.ifPresent && !await versionFileExists(directory, descriptor.kind, descriptor.file)) {
+  if ("wordpress-stable-tag" === descriptor.kind && (isPrerelease2(version) || descriptor.ifPresent && !await versionFileExists(directory, descriptor.kind, descriptor.file))) {
     return;
   }
   const file = path2.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
@@ -27355,7 +27386,7 @@ async function verifyVersionTargets(repository, pkg, expected) {
     let actual;
     if ("composer-json" === target.kind && target.ifPresent && !Object.hasOwn(await readJson(path2.join(pkg.directory, target.file)), target.field)) {
       actual = void 0;
-    } else if ("wordpress-stable-tag" === target.kind && target.ifPresent && !await versionFileExists(pkg.directory, target.kind, target.file)) {
+    } else if ("wordpress-stable-tag" === target.kind && (isPrerelease2(expected) || target.ifPresent && !await versionFileExists(pkg.directory, target.kind, target.file))) {
       actual = void 0;
     } else {
       actual = await readVersion(repository, pkg.directory, target, pkg.path, pkg.group.tagType);
@@ -28609,7 +28640,7 @@ async function getTagVersion(pkg, expected) {
 }
 async function getPreviousTag(repository, prefix, version) {
   const tags = await repository.listTags(prefix);
-  return tags.filter((tag) => tag.startsWith(prefix)).map((tag) => ({ tag, version: tag.slice(prefix.length) })).filter((item) => isVersion(item.version) && compareVersions(item.version, version) < 0).sort((a, b) => compareVersions(b.version, a.version))[0]?.tag;
+  return tags.filter((tag) => tag.startsWith(prefix)).map((tag) => ({ tag, version: tag.slice(prefix.length) })).filter((item) => isVersion(item.version) && (isPrerelease2(version) || !isPrerelease2(item.version)) && compareVersions(item.version, version) < 0).sort((a, b) => compareVersions(b.version, a.version))[0]?.tag;
 }
 async function getReleaseNotes(repository, config, pkg, release, end) {
   const changelog = await readChangelogSection(pkg.directory, release.version);
@@ -28888,6 +28919,26 @@ var ChangesetRelease = class {
     if (withDependents && config.dependents) {
       await assertDependentsSourcesReleased(releasePlan, context.plan, packages, config);
     }
+    if (void 0 !== options2.prerelease && void 0 !== options2.snapshot) {
+      throw new ValidationError("A release cannot be both a pre-release and a snapshot.");
+    }
+    if (void 0 !== options2.snapshot) {
+      const id = options2.snapshot;
+      const time = options2.snapshotTime ?? /* @__PURE__ */ new Date();
+      releasePlan = {
+        ...releasePlan,
+        releases: releasePlan.releases.map((release) => ({
+          ...release,
+          nextVersion: getSnapshotVersion(release.nextVersion, id, time)
+        }))
+      };
+    }
+    if (void 0 !== options2.prerelease) {
+      releasePlan = {
+        ...releasePlan,
+        releases: await this.toPrereleases(context, releasePlan.releases, options2.prerelease)
+      };
+    }
     const date = options2.date ?? (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
     const releases = await getVersionedReleases(this.repository, config, releasePlan.releases, this.getChangesetDirectory(config));
     if (!options2.dryRun) {
@@ -28989,6 +29040,38 @@ var ChangesetRelease = class {
       missingChangesets,
       warnings
     };
+  }
+  /**
+   * Turn the next versions of releases into pre-releases, like 1.3.0-rc.1
+   * for 1.3.0, numbered from the existing tags of each package. Dependents
+   * become pre-releases too, so they bundle the pre-releases of their sources.
+   *
+   * @param  context    Release context.
+   * @param  releases   Releases with their stable next versions.
+   * @param  prerelease Pre-release identifier with an optional number, like rc or rc.1.
+   * @return Releases with their pre-release next versions.
+   * @throws {ValidationError} For an invalid pre-release or an existing version.
+   */
+  async toPrereleases(context, releases, prerelease) {
+    const tagFormat = context.config.tagFormat ?? "{path}/{version}";
+    return Promise.all(releases.map(async (release) => {
+      const configured = context.packages.find((pkg) => pkg.name === release.package.name);
+      const versions = configured ? await this.listTaggedVersions(formatTag(tagFormat, configured, "")) : [];
+      return {
+        ...release,
+        nextVersion: getPrereleaseVersion(release.nextVersion, prerelease, versions)
+      };
+    }));
+  }
+  /**
+   * List the versions of the tags with a prefix.
+   *
+   * @param prefix Tag prefix of a package, like `plugins/alpha/`.
+   * @return Tagged versions.
+   */
+  async listTaggedVersions(prefix) {
+    const tags = await this.repository.listTags(prefix);
+    return tags.map((tag) => tag.slice(prefix.length));
   }
   /**
    * Write the versions, dependency specs and changelogs of the releases and
@@ -29228,7 +29311,9 @@ var changesetVersionArgs = {
   "dry-run": { type: "boolean" },
   date: { type: "string" },
   package: { type: "string", multiple: true },
-  "no-dependents": { type: "boolean" }
+  "no-dependents": { type: "boolean" },
+  prerelease: { type: "string" },
+  snapshot: { type: "string" }
 };
 function parseChangesetDate(value) {
   if (void 0 === value) {
@@ -29244,14 +29329,27 @@ function parseChangesetDate(value) {
 function parseChangesetVersionArgs(values) {
   const date = parseChangesetDate(getString(values, "date"));
   const packages = getStrings(values, "package");
+  const prerelease = getString(values, "prerelease")?.trim();
   if (packages.some((name) => !name.trim())) {
     throw new ValidationError("--package <name> must not be empty.");
+  }
+  const snapshot = getString(values, "snapshot")?.trim();
+  if ("" === prerelease) {
+    throw new ValidationError("--prerelease <id> must not be empty.");
+  }
+  if ("" === snapshot) {
+    throw new ValidationError("--snapshot <id> must not be empty.");
+  }
+  if (prerelease && snapshot) {
+    throw new ValidationError("--prerelease cannot be combined with --snapshot.");
   }
   return {
     dryRun: getBoolean(values, "dry-run"),
     dependents: !getBoolean(values, "no-dependents"),
     ...date ? { date } : {},
-    ...packages.length ? { packages } : {}
+    ...packages.length ? { packages } : {},
+    ...prerelease ? { prerelease } : {},
+    ...snapshot ? { snapshot } : {}
   };
 }
 var changesetTagArgs = {
@@ -29456,7 +29554,7 @@ An empty changeset added since the comparison base counts as an explicit no-rele
 // ../../js/wp-release/dist/commands/changeset-version.js
 var changeset_version_default = {
   name: "changeset-version",
-  usage: "changeset-version [--dry-run] [--date <YYYY-MM-DD>] [--package <name>] [--no-dependents]",
+  usage: "changeset-version [--dry-run] [--date <YYYY-MM-DD>] [--package <name>] [--no-dependents] [--prerelease <id> | --snapshot <id>]",
   summary: "Apply pending version bumps and changelog entries.",
   help: `Options:
   --dry-run              Print the release plan without writing files
@@ -29464,11 +29562,22 @@ var changeset_version_default = {
   --package <name>       Version only this package, by identifier or path
                          under the configured root (repeatable)
   --no-dependents        Leave the configured dependents of the selected sources out
+  --prerelease <id>      Release pre-releases like 1.3.0-rc.1, with an identifier
+                         like rc (numbered from the tags) or rc.1
+  --snapshot <id>        Release snapshots like 1.3.0-pr-251.20261012183000,
+                         with an identifier like pr-251 and the UTC time
 
 Updates configured version files, prepends changelog entries and removes the
 applied changeset files. With --package, a changeset that also names other
 packages keeps only their entries, so it still applies to their releases, and
-changesets without packages are left for a run without --package.`,
+changesets without packages are left for a run without --package.
+
+With --prerelease, run it on a branch that isn't merged and tag that branch,
+since the pre-release consumes the changesets that the stable release needs.
+The readme Stable tag keeps the last stable version.
+
+With --snapshot, build and publish the versioned files without committing
+them, for example to test a pull request.`,
   options: changesetVersionArgs,
   async run({ values, cwd, configFile, logger: logger2 }) {
     const args = parseChangesetVersionArgs(values);
