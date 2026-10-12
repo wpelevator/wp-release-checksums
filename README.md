@@ -82,7 +82,7 @@ The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/pa
 
 ## Development
 
-The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo. `npm run build` bundles the pinned published `@wpelevator/wp-release` dependency (`0.9.0`); update that dependency and the lockfile when adopting a later release. The split-push workflow commits the bundle to the action's release repository. `npm test` runs the input mapping tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
+The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo. `npm run build` bundles the `@wpelevator/wp-release` dependency at the version that the action's `package.json` pins (`0.9.0`). The dependents policy of the monorepo release configuration re-releases the actions whenever a later version falls outside their pins and rewrites them, so they don't need a manual update. A pin that drifts from the published version, like a deliberate pin to an older release, selects a registry install instead, and `changeset-status` warns until the pin resolves the package again. The split-push workflow commits the bundle to the action's release repository. `npm test` runs the input mapping tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
 
 ```bash
 npm run build --workspace @wpelevator/wp-release-checksums-action
