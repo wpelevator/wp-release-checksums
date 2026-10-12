@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 (2026-10-12)
+
+- Bundle wp-release 0.11.0.
+
 ## 0.3.1 (2026-10-12)
 
 - Update the bundled-dependency documentation of the three actions, and the release configuration re-releases them with the dependents policy. ([#238](https://github.com/wpelevator/basement/pull/238) by @kasparsd, [`04fa1be`](https://github.com/wpelevator/basement/commit/04fa1be25aeef5e39e018d874d9a8dde54a5179a))
