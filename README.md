@@ -50,6 +50,7 @@ The manifest doesn't list itself or its `.sig`, and `output` can be any path ins
 | `output` | the filename in the repository root | Path of the manifest. |
 | `distignore` | `.distignore` in `source-dir` when present | Path to the ignore file, or `false` to not read one. |
 | `exclude` | | Extra gitignore-style patterns separated by commas or new lines, like `build/,assets/*,images/**/*`. They're applied after the ignore file, so a `!` pattern can re-include a file. |
+| `exclude-gitattributes` | `false` | Also exclude paths marked `export-ignore` by Git attributes. Requires `source-dir` to be inside a Git repository. |
 | `type` | detected from the headers, else `plugin` | `plugin` or `theme`. |
 | `force` | `false` | Overwrite an existing manifest. |
 
@@ -73,7 +74,7 @@ npm install --save-dev @wpelevator/wp-release
 npx wp-release checksums dist
 ```
 
-The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/package/@wpelevator/wp-release#checksums): `source-dir` is the first argument, `slug`, `version`, `type`, `filename-format`, `output`, `distignore`, `exclude` and `force` keep their names, and `distignore: false` is `--no-distignore`. Add `--json` to read the path of the manifest from the output. The CLI needs Node.js 22.12 or later, and has no other dependencies on the runner. Run `npx wp-release checksums --help` for all options.
+The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/package/@wpelevator/wp-release#checksums): `source-dir` is the first argument, `slug`, `version`, `type`, `filename-format`, `output`, `distignore`, `exclude`, `exclude-gitattributes` and `force` keep their names, and `distignore: false` is `--no-distignore`. Add `--json` to read the path of the manifest from the output. The CLI needs Node.js 22.12 or later, and has no other dependencies on the runner. Run `npx wp-release checksums --help` for all options.
 
 ## How it works
 
@@ -81,7 +82,7 @@ The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/pa
 
 ## Development
 
-The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo. `npm run build` bundles the published `wp-release` version declared by this action; update that dependency after the new `wp-release` version is published. The split-push workflow commits the bundle to the action's release repository. `npm test` runs the input mapping tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
+The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo. `npm run build` bundles the pinned published `@wpelevator/wp-release` dependency (`0.9.0`); update that dependency and the lockfile when adopting a later release. The split-push workflow commits the bundle to the action's release repository. `npm test` runs the input mapping tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
 
 ```bash
 npm run build --workspace @wpelevator/wp-release-checksums-action
