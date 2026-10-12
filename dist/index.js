@@ -25998,21 +25998,21 @@ function defaultTagType(packagePath, type) {
 }
 
 // ../../js/wp-release/dist/versions.js
-var VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
+var VERSION_PATTERN = /^(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){1,3}(?:-([0-9A-Za-z.-]+))?$/;
 var PRERELEASE_INPUT_PATTERN = /^([A-Za-z][0-9A-Za-z-]*)(?:\.(0|[1-9]\d*))?$/;
 var SNAPSHOT_ID_PATTERN = /^[A-Za-z][0-9A-Za-z-]*(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*$/;
 function isVersion(version) {
   return VERSION_PATTERN.test(version);
 }
 function isPrerelease2(version) {
-  return Boolean(VERSION_PATTERN.exec(version)?.[4]);
+  return Boolean(VERSION_PATTERN.exec(version)?.[1]);
 }
 function compareVersions(left, right) {
   const [leftCore = "", leftPre] = splitPrerelease(left);
   const [rightCore = "", rightPre] = splitPrerelease(right);
   const a = leftCore.split(".").map(Number);
   const b = rightCore.split(".").map(Number);
-  const core = (a[0] ?? 0) - (b[0] ?? 0) || (a[1] ?? 0) - (b[1] ?? 0) || (a[2] ?? 0) - (b[2] ?? 0);
+  const core = compareParts(a, b);
   if (core || leftPre === rightPre) {
     return core;
   }
@@ -26020,6 +26020,14 @@ function compareVersions(left, right) {
     return void 0 === leftPre ? 1 : -1;
   }
   return comparePrerelease(leftPre.split("."), rightPre.split("."));
+}
+function compareParts(left, right) {
+  const [a, ...leftRest] = left;
+  const [b, ...rightRest] = right;
+  if (void 0 === a && void 0 === b) {
+    return 0;
+  }
+  return (a ?? 0) - (b ?? 0) || compareParts(leftRest, rightRest);
 }
 function splitPrerelease(version) {
   const index = version.indexOf("-");
@@ -26051,7 +26059,7 @@ function getPrereleaseVersion(stable, prerelease, existing) {
     throw new ValidationError(`Invalid pre-release "${prerelease}"; expected an identifier with an optional number, like rc or rc.1.`);
   }
   if (!isVersion(stable) || isPrerelease2(stable)) {
-    throw new ValidationError(`Cannot release "${stable}" as a pre-release: expected a stable x.y.z version.`);
+    throw new ValidationError(`Cannot release "${stable}" as a pre-release: expected a stable version.`);
   }
   const identifier = match[1] ?? "";
   const version = match[2] ? `${stable}-${prerelease}` : `${stable}-${identifier}.${getNextPrereleaseNumber(`${stable}-${identifier}.`, existing)}`;
@@ -26069,7 +26077,7 @@ function getSnapshotVersion(stable, id, time) {
     throw new ValidationError(`Invalid snapshot "${id}"; expected SemVer pre-release identifiers that start with a letter, like pr-251.`);
   }
   if (!isVersion(stable) || isPrerelease2(stable)) {
-    throw new ValidationError(`Cannot release "${stable}" as a snapshot: expected a stable x.y.z version.`);
+    throw new ValidationError(`Cannot release "${stable}" as a snapshot: expected a stable version.`);
   }
   const timestamp = time.toISOString().replace(/\D/g, "").slice(0, 14);
   return `${stable}-${id}.${timestamp}`;
@@ -26088,7 +26096,7 @@ async function readVersion(repository, directory, descriptor, relativePath, tagT
   if ("git-tag" === descriptor.kind) {
     const pattern = descriptor.pattern ?? "{path}/{version}";
     const tags = await repository.listTags(formatTemplatePrefix(pattern, relativePath, tagType));
-    const versions = tags.map((tag) => tag.match(/(?:^|\/|v)(\d+\.\d+\.\d+)$/)?.[1]).filter((item) => Boolean(item));
+    const versions = tags.map((tag) => tag.match(/(?:^|\/|v)(\d+(?:\.\d+){1,3})$/)?.[1]).filter((item) => Boolean(item));
     versions.sort((a, b) => compareVersions(b, a));
     if (versions[0]) {
       return versions[0];
@@ -28461,17 +28469,19 @@ function getNextVersion(currentVersion, bump) {
   if (!CHANGESET_BUMPS.includes(bump)) {
     throw new ValidationError(`Invalid bump "${bump}"; expected patch, minor or major.`);
   }
-  const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(currentVersion);
-  if (!match) {
-    throw new ValidationError(`Cannot bump "${currentVersion}": expected a stable semantic version in x.y.z format.`);
+  if (!/^(0|[1-9]\d*)(\.(0|[1-9]\d*)){1,3}$/.test(currentVersion)) {
+    throw new ValidationError(`Cannot bump "${currentVersion}": expected a stable version in x.y, x.y.z or x.y.z.w format.`);
   }
-  if ("major" === bump) {
-    return `${Number(match[1]) + 1}.0.0`;
-  }
-  if ("minor" === bump) {
-    return `${match[1]}.${Number(match[2]) + 1}.0`;
-  }
-  return `${match[1]}.${match[2]}.${Number(match[3]) + 1}`;
+  const parts = currentVersion.split(".").map(Number);
+  const index = { major: 0, minor: 1, patch: 2 }[bump];
+  const length = Math.max(parts.length, index + 1);
+  return Array.from({ length }, (_, position) => {
+    const part = parts[position] ?? 0;
+    if (position === index) {
+      return part + 1;
+    }
+    return position < index ? part : 0;
+  }).join(".");
 }
 
 // ../../js/wp-release/dist/changeset-prompt.js
