@@ -1070,14 +1070,14 @@ var require_util = __commonJS({
         }
         const port = url.port != null ? url.port : url.protocol === "https:" ? 443 : 80;
         let origin = url.origin != null ? url.origin : `${url.protocol || ""}//${url.hostname || ""}:${port}`;
-        let path10 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
+        let path11 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
         if (origin[origin.length - 1] === "/") {
           origin = origin.slice(0, origin.length - 1);
         }
-        if (path10 && path10[0] !== "/") {
-          path10 = `/${path10}`;
+        if (path11 && path11[0] !== "/") {
+          path11 = `/${path11}`;
         }
-        return new URL(`${origin}${path10}`);
+        return new URL(`${origin}${path11}`);
       }
       if (!isHttpOrHttpsPrefixed(url.origin || url.protocol)) {
         throw new InvalidArgumentError("Invalid URL protocol: the URL must start with `http:` or `https:`.");
@@ -1528,39 +1528,39 @@ var require_diagnostics = __commonJS({
       });
       diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
         const {
-          request: { method, path: path10, origin }
+          request: { method, path: path11, origin }
         } = evt;
-        debuglog("sending request to %s %s/%s", method, origin, path10);
+        debuglog("sending request to %s %s/%s", method, origin, path11);
       });
       diagnosticsChannel.channel("undici:request:headers").subscribe((evt) => {
         const {
-          request: { method, path: path10, origin },
+          request: { method, path: path11, origin },
           response: { statusCode }
         } = evt;
         debuglog(
           "received response to %s %s/%s - HTTP %d",
           method,
           origin,
-          path10,
+          path11,
           statusCode
         );
       });
       diagnosticsChannel.channel("undici:request:trailers").subscribe((evt) => {
         const {
-          request: { method, path: path10, origin }
+          request: { method, path: path11, origin }
         } = evt;
-        debuglog("trailers received from %s %s/%s", method, origin, path10);
+        debuglog("trailers received from %s %s/%s", method, origin, path11);
       });
       diagnosticsChannel.channel("undici:request:error").subscribe((evt) => {
         const {
-          request: { method, path: path10, origin },
+          request: { method, path: path11, origin },
           error
         } = evt;
         debuglog(
           "request to %s %s/%s errored - %s",
           method,
           origin,
-          path10,
+          path11,
           error.message
         );
       });
@@ -1609,9 +1609,9 @@ var require_diagnostics = __commonJS({
         });
         diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
           const {
-            request: { method, path: path10, origin }
+            request: { method, path: path11, origin }
           } = evt;
-          debuglog("sending request to %s %s/%s", method, origin, path10);
+          debuglog("sending request to %s %s/%s", method, origin, path11);
         });
       }
       diagnosticsChannel.channel("undici:websocket:open").subscribe((evt) => {
@@ -1674,7 +1674,7 @@ var require_request = __commonJS({
     var kHandler = /* @__PURE__ */ Symbol("handler");
     var Request = class {
       constructor(origin, {
-        path: path10,
+        path: path11,
         method,
         body,
         headers,
@@ -1689,11 +1689,11 @@ var require_request = __commonJS({
         expectContinue,
         servername
       }, handler) {
-        if (typeof path10 !== "string") {
+        if (typeof path11 !== "string") {
           throw new InvalidArgumentError("path must be a string");
-        } else if (path10[0] !== "/" && !(path10.startsWith("http://") || path10.startsWith("https://")) && method !== "CONNECT") {
+        } else if (path11[0] !== "/" && !(path11.startsWith("http://") || path11.startsWith("https://")) && method !== "CONNECT") {
           throw new InvalidArgumentError("path must be an absolute URL or start with a slash");
-        } else if (invalidPathRegex.test(path10)) {
+        } else if (invalidPathRegex.test(path11)) {
           throw new InvalidArgumentError("invalid request path");
         }
         if (typeof method !== "string") {
@@ -1759,7 +1759,7 @@ var require_request = __commonJS({
         this.completed = false;
         this.aborted = false;
         this.upgrade = upgrade || null;
-        this.path = query ? buildURL(path10, query) : path10;
+        this.path = query ? buildURL(path11, query) : path11;
         this.origin = origin;
         this.idempotent = idempotent == null ? method === "HEAD" || method === "GET" : idempotent;
         this.blocking = blocking == null ? false : blocking;
@@ -6445,7 +6445,7 @@ var require_client_h1 = __commonJS({
       return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE" && method !== "CONNECT";
     }
     function writeH1(client, request) {
-      const { method, path: path10, host, upgrade, blocking, reset } = request;
+      const { method, path: path11, host, upgrade, blocking, reset } = request;
       let { body, headers, contentLength } = request;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH" || method === "QUERY" || method === "PROPFIND" || method === "PROPPATCH";
       if (util.isFormDataLike(body)) {
@@ -6526,7 +6526,7 @@ var require_client_h1 = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      let header = `${method} ${path10} HTTP/1.1\r
+      let header = `${method} ${path11} HTTP/1.1\r
 `;
       if (typeof host === "string") {
         header += `host: ${host}\r
@@ -7057,7 +7057,7 @@ var require_client_h2 = __commonJS({
     }
     function writeH2(client, request) {
       const session = client[kHTTP2Session];
-      const { method, path: path10, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
+      const { method, path: path11, host, upgrade, expectContinue, signal, headers: reqHeaders } = request;
       let { body } = request;
       if (upgrade) {
         util.errorRequest(client, request, new Error("Upgrade not supported for H2"));
@@ -7154,7 +7154,7 @@ var require_client_h2 = __commonJS({
         });
         return true;
       }
-      headers[HTTP2_HEADER_PATH] = path10;
+      headers[HTTP2_HEADER_PATH] = path11;
       headers[HTTP2_HEADER_SCHEME] = "https";
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
@@ -7507,9 +7507,9 @@ var require_redirect_handler = __commonJS({
           return this.handler.onHeaders(statusCode, headers, resume, statusText);
         }
         const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
-        const path10 = search ? `${pathname}${search}` : pathname;
+        const path11 = search ? `${pathname}${search}` : pathname;
         this.opts.headers = cleanRequestHeaders(this.opts.headers, statusCode === 303, this.opts.origin !== origin);
-        this.opts.path = path10;
+        this.opts.path = path11;
         this.opts.origin = origin;
         this.opts.maxRedirections = 0;
         this.opts.query = null;
@@ -8744,10 +8744,10 @@ var require_proxy_agent = __commonJS({
         };
         const {
           origin,
-          path: path10 = "/",
+          path: path11 = "/",
           headers = {}
         } = opts;
-        opts.path = origin + path10;
+        opts.path = origin + path11;
         if (!("host" in headers) && !("Host" in headers)) {
           const { host } = new URL2(origin);
           headers.host = host;
@@ -10719,20 +10719,20 @@ var require_mock_utils = __commonJS({
       }
       return true;
     }
-    function safeUrl(path10) {
-      if (typeof path10 !== "string") {
-        return path10;
+    function safeUrl(path11) {
+      if (typeof path11 !== "string") {
+        return path11;
       }
-      const pathSegments = path10.split("?");
+      const pathSegments = path11.split("?");
       if (pathSegments.length !== 2) {
-        return path10;
+        return path11;
       }
       const qp = new URLSearchParams(pathSegments.pop());
       qp.sort();
       return [...pathSegments, qp.toString()].join("?");
     }
-    function matchKey(mockDispatch2, { path: path10, method, body, headers }) {
-      const pathMatch = matchValue(mockDispatch2.path, path10);
+    function matchKey(mockDispatch2, { path: path11, method, body, headers }) {
+      const pathMatch = matchValue(mockDispatch2.path, path11);
       const methodMatch = matchValue(mockDispatch2.method, method);
       const bodyMatch = typeof mockDispatch2.body !== "undefined" ? matchValue(mockDispatch2.body, body) : true;
       const headersMatch = matchHeaders(mockDispatch2, headers);
@@ -10754,7 +10754,7 @@ var require_mock_utils = __commonJS({
     function getMockDispatch(mockDispatches, key) {
       const basePath = key.query ? buildURL(key.path, key.query) : key.path;
       const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
-      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path10 }) => matchValue(safeUrl(path10), resolvedPath));
+      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path11 }) => matchValue(safeUrl(path11), resolvedPath));
       if (matchedMockDispatches.length === 0) {
         throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
       }
@@ -10792,9 +10792,9 @@ var require_mock_utils = __commonJS({
       }
     }
     function buildKey(opts) {
-      const { path: path10, method, body, headers, query } = opts;
+      const { path: path11, method, body, headers, query } = opts;
       return {
-        path: path10,
+        path: path11,
         method,
         body,
         headers,
@@ -11257,10 +11257,10 @@ var require_pending_interceptors_formatter = __commonJS({
       }
       format(pendingInterceptors) {
         const withPrettyHeaders = pendingInterceptors.map(
-          ({ method, path: path10, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
+          ({ method, path: path11, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
             Method: method,
             Origin: origin,
-            Path: path10,
+            Path: path11,
             "Status code": statusCode,
             Persistent: persist ? PERSISTENT : NOT_PERSISTENT,
             Invocations: timesInvoked,
@@ -16141,9 +16141,9 @@ var require_util6 = __commonJS({
         }
       }
     }
-    function validateCookiePath(path10) {
-      for (let i = 0; i < path10.length; ++i) {
-        const code = path10.charCodeAt(i);
+    function validateCookiePath(path11) {
+      for (let i = 0; i < path11.length; ++i) {
+        const code = path11.charCodeAt(i);
         if (code < 32 || // exclude CTLs (0-31)
         code > 126 || // exclude DEL and non-ascii
         code === 59) {
@@ -18985,11 +18985,11 @@ var require_undici = __commonJS({
           if (typeof opts.path !== "string") {
             throw new InvalidArgumentError("invalid opts.path");
           }
-          let path10 = opts.path;
+          let path11 = opts.path;
           if (!opts.path.startsWith("/")) {
-            path10 = `/${path10}`;
+            path11 = `/${path11}`;
           }
-          url = new URL(util.parseOrigin(url).origin + path10);
+          url = new URL(util.parseOrigin(url).origin + path11);
         } else {
           if (!opts) {
             opts = typeof url === "object" ? url : {};
@@ -19553,26 +19553,26 @@ var require_ignore = __commonJS({
       const index = body.indexOf(SLASH);
       return index < 0 || index === body.length - 1;
     };
-    var basenameOf = (path10) => {
-      const end = path10.length - 1;
-      const index = path10.lastIndexOf(
+    var basenameOf = (path11) => {
+      const end = path11.length - 1;
+      const index = path11.lastIndexOf(
         SLASH,
-        path10[end] === SLASH ? end - 1 : end
+        path11[end] === SLASH ? end - 1 : end
       );
-      return index < 0 ? path10 : path10.slice(index + 1);
+      return index < 0 ? path11 : path11.slice(index + 1);
     };
-    var parentOf = (path10) => {
-      if (path10.charCodeAt(0) === SLASH_CODE || path10.indexOf(DOUBLE_SLASH) >= 0) {
-        const slices = path10.split(SLASH).filter(Boolean);
+    var parentOf = (path11) => {
+      if (path11.charCodeAt(0) === SLASH_CODE || path11.indexOf(DOUBLE_SLASH) >= 0) {
+        const slices = path11.split(SLASH).filter(Boolean);
         slices.pop();
         return slices.length ? slices.join(SLASH) + SLASH : EMPTY;
       }
-      const end = path10.length - 1;
-      const cut = path10.lastIndexOf(
+      const end = path11.length - 1;
+      const cut = path11.lastIndexOf(
         SLASH,
-        path10.charCodeAt(end) === SLASH_CODE ? end - 1 : end
+        path11.charCodeAt(end) === SLASH_CODE ? end - 1 : end
       );
-      return cut < 0 ? EMPTY : path10.slice(0, cut + 1);
+      return cut < 0 ? EMPTY : path11.slice(0, cut + 1);
     };
     var isString = (subject) => typeof subject === "string";
     var checkPattern = (pattern) => pattern && isString(pattern) && !REGEX_INVALID_TRAILING_BACKSLASH.test(pattern);
@@ -19707,7 +19707,7 @@ var require_ignore = __commonJS({
       // Match the literal 'abc/' for `checkIgnore`, last rule wins. Only a rule
       //   ending in a wildcard can match it (see `checkSourceOf`), so the rest
       //   are left out once, rather than tested or compiled for every path.
-      testLiteral(path10) {
+      testLiteral(path11) {
         const rules = this._literalRules || (this._literalRules = this._rules.filter(
           ({ body }) => body[body.length - (body[body.length - 1] === SLASH ? 2 : 1)] === "*"
         ));
@@ -19716,7 +19716,7 @@ var require_ignore = __commonJS({
         let matchedRule;
         for (let index = rules.length - 1; index >= 0; index--) {
           const rule = rules[index];
-          if (rule.checkRegex.test(path10)) {
+          if (rule.checkRegex.test(path11)) {
             ignored = !rule.negative;
             unignored = rule.negative;
             matchedRule = rule.negative ? UNDEFINED : rule;
@@ -19739,20 +19739,20 @@ var require_ignore = __commonJS({
       //   path matching.
       // - check `string` either `MODE_IGNORE` or `MODE_CHECK_IGNORE`
       // @returns {TestResult} true if a file is ignored
-      test(path10, checkUnignored, mode) {
+      test(path11, checkUnignored, mode) {
         let ignored = false;
         let unignored = false;
         let matchedRule;
         const rules = this._rules;
         const { length } = rules;
         const shortcut = this._basenameCount * 2 >= length;
-        const basename6 = shortcut ? basenameOf(path10) : path10;
+        const basename6 = shortcut ? basenameOf(path11) : path11;
         for (let index = 0; index < length; index++) {
           const rule = rules[index];
           const { negative } = rule;
           const skip = unignored === negative && ignored !== unignored || negative && !ignored && !unignored && !checkUnignored;
           if (!skip && rule[mode].test(
-            shortcut && rule._basenameOnly ? basename6 : path10
+            shortcut && rule._basenameOnly ? basename6 : path11
           )) {
             ignored = !negative;
             unignored = negative;
@@ -19772,17 +19772,17 @@ var require_ignore = __commonJS({
     var throwError = (message, Ctor) => {
       throw new Ctor(message);
     };
-    var checkPath = (path10, originalPath, doThrow) => {
-      if (!isString(path10)) {
+    var checkPath = (path11, originalPath, doThrow) => {
+      if (!isString(path11)) {
         return doThrow(
           `path must be a string, but got \`${originalPath}\``,
           TypeError
         );
       }
-      if (!path10) {
+      if (!path11) {
         return doThrow(`path must not be empty`, TypeError);
       }
-      if (checkPath.isNotRelative(path10)) {
+      if (checkPath.isNotRelative(path11)) {
         const r = "`path.relative()`d";
         return doThrow(
           `path should be a ${r} string, but got "${originalPath}"`,
@@ -19791,25 +19791,25 @@ var require_ignore = __commonJS({
       }
       return true;
     };
-    var isNotRelative = (path10) => {
-      const first = path10.charCodeAt(0);
+    var isNotRelative = (path11) => {
+      const first = path11.charCodeAt(0);
       if (first === SLASH_CODE) {
         return true;
       }
       if (first !== DOT_CODE) {
         return false;
       }
-      if (path10.length === 1) {
+      if (path11.length === 1) {
         return true;
       }
-      const second = path10.charCodeAt(1);
+      const second = path11.charCodeAt(1);
       if (second === SLASH_CODE) {
         return true;
       }
       if (second !== DOT_CODE) {
         return false;
       }
-      return path10.length === 2 || path10.charCodeAt(2) === SLASH_CODE;
+      return path11.length === 2 || path11.charCodeAt(2) === SLASH_CODE;
     };
     checkPath.isNotRelative = isNotRelative;
     checkPath.convert = (p) => p;
@@ -19840,54 +19840,54 @@ var require_ignore = __commonJS({
       }
       // @returns {TestResult}
       _test(originalPath, cache, checkUnignored) {
-        const path10 = originalPath && checkPath.convert(originalPath);
+        const path11 = originalPath && checkPath.convert(originalPath);
         checkPath(
-          path10,
+          path11,
           originalPath,
           this._strictPathCheck ? throwError : RETURN_FALSE
         );
-        return this._t(path10, cache, checkUnignored);
+        return this._t(path11, cache, checkUnignored);
       }
-      checkIgnore(path10) {
-        if (path10.charCodeAt(path10.length - 1) !== SLASH_CODE) {
-          return this.test(path10);
+      checkIgnore(path11) {
+        if (path11.charCodeAt(path11.length - 1) !== SLASH_CODE) {
+          return this.test(path11);
         }
-        const dir = this._t(path10, this._testCache, true);
+        const dir = this._t(path11, this._testCache, true);
         if (dir.ignored) {
           return dir;
         }
-        const literal = this._rules.testLiteral(path10);
+        const literal = this._rules.testLiteral(path11);
         return literal.ignored || literal.unignored ? literal : dir;
       }
-      _t(path10, cache, checkUnignored) {
-        if (path10 in cache) {
-          return cache[path10];
+      _t(path11, cache, checkUnignored) {
+        if (path11 in cache) {
+          return cache[path11];
         }
-        const parentPath = parentOf(path10);
+        const parentPath = parentOf(path11);
         const parent = parentPath ? this._t(parentPath, cache, checkUnignored) : UNDEFINED;
-        return cache[path10] = parent && parent.ignored ? parent : this._rules.test(path10, checkUnignored, MODE_IGNORE);
+        return cache[path11] = parent && parent.ignored ? parent : this._rules.test(path11, checkUnignored, MODE_IGNORE);
       }
-      ignores(path10) {
-        return this._test(path10, this._ignoreCache, false).ignored;
+      ignores(path11) {
+        return this._test(path11, this._ignoreCache, false).ignored;
       }
       createFilter() {
-        return (path10) => !this.ignores(path10);
+        return (path11) => !this.ignores(path11);
       }
       filter(paths) {
         return makeArray(paths).filter(this.createFilter());
       }
       // @returns {TestResult}
-      test(path10) {
-        return this._test(path10, this._testCache, true);
+      test(path11) {
+        return this._test(path11, this._testCache, true);
       }
     };
     var factory = (options2) => new Ignore(options2);
-    var isPathValid = (path10) => checkPath(path10 && checkPath.convert(path10), path10, RETURN_FALSE);
+    var isPathValid = (path11) => checkPath(path11 && checkPath.convert(path11), path11, RETURN_FALSE);
     var setupWindows = () => {
       const makePosix = (str) => /^\\\\\?\\/.test(str) || /["<>|\u0000-\u001F]+/u.test(str) ? str : str.replace(/\\/g, "/");
       checkPath.convert = makePosix;
       const REGEX_TEST_WINDOWS_PATH_ABSOLUTE = /^[a-z]:\//i;
-      checkPath.isNotRelative = (path10) => REGEX_TEST_WINDOWS_PATH_ABSOLUTE.test(path10) || isNotRelative(path10);
+      checkPath.isNotRelative = (path11) => REGEX_TEST_WINDOWS_PATH_ABSOLUTE.test(path11) || isNotRelative(path11);
     };
     if (
       // Detect `process` so that it can run in browsers.
@@ -21362,9 +21362,9 @@ var require_yauzl = __commonJS({
     exports.Entry = Entry;
     exports.LocalFileHeader = LocalFileHeader;
     exports.RandomAccessReader = RandomAccessReader;
-    function openPromise(path10, options2) {
+    function openPromise(path11, options2) {
       return new Promise((resolve11, reject) => {
-        open3(path10, { ...options2, lazyEntries: true }, function(err, zipfile) {
+        open3(path11, { ...options2, lazyEntries: true }, function(err, zipfile) {
           if (err) return reject(err);
           resolve11(zipfile);
         });
@@ -21394,7 +21394,7 @@ var require_yauzl = __commonJS({
         });
       });
     }
-    function open3(path10, options2, callback) {
+    function open3(path11, options2, callback) {
       if (typeof options2 === "function") {
         callback = options2;
         options2 = null;
@@ -21406,7 +21406,7 @@ var require_yauzl = __commonJS({
       if (options2.validateEntrySizes == null) options2.validateEntrySizes = true;
       if (options2.strictFileNames == null) options2.strictFileNames = false;
       if (callback == null) callback = defaultCallback;
-      fs3.open(path10, "r", function(err, fd) {
+      fs3.open(path11, "r", function(err, fd) {
         if (err) return callback(err);
         fromFd(fd, options2, function(err2, zipfile) {
           if (err2) fs3.close(fd, defaultCallback);
@@ -23943,7 +23943,7 @@ async function loadFileRules(selection) {
       throw new ValidationError("--exclude-gitattributes requires a source directory.");
     }
     const excluded = await getExportIgnoredPaths(selection.sourceDir, rules);
-    rules.add(excluded.map((path10) => `/${escapePattern(path10)}`));
+    rules.add(excluded.map((path11) => `/${escapePattern(path11)}`));
   }
   return rules.add(ALWAYS_EXCLUDED);
 }
@@ -23967,11 +23967,11 @@ async function getExportIgnoredPaths(sourceDir, rules) {
   if (!candidates.length) {
     return [];
   }
-  const pathsFromRoot = candidates.map((path10) => posix.join(sourceFromRoot.split("\\").join("/"), path10));
+  const pathsFromRoot = candidates.map((path11) => posix.join(sourceFromRoot.split("\\").join("/"), path11));
   const { stdout } = await runner({
     args: ["check-attr", "-z", "--stdin", "export-ignore"],
     cwd: root,
-    input: pathsFromRoot.map((path10) => `${path10}\0`).join("")
+    input: pathsFromRoot.map((path11) => `${path11}\0`).join("")
   });
   const fields = stdout.split("\0");
   const ignored = [];
@@ -23988,32 +23988,32 @@ async function findAttributeCandidates(sourceDir, dir, rules) {
     withFileTypes: true
   });
   const paths = await Promise.all(entries.map(async (entry) => {
-    const path10 = posix.join(dir, entry.name);
-    if (entry.isDirectory() && !rules.ignores(`${path10}/`)) {
-      return findAttributeCandidates(sourceDir, path10, rules);
+    const path11 = posix.join(dir, entry.name);
+    if (entry.isDirectory() && !rules.ignores(`${path11}/`)) {
+      return findAttributeCandidates(sourceDir, path11, rules);
     }
-    if ((entry.isFile() || entry.isSymbolicLink()) && !rules.ignores(path10)) {
-      return [path10];
+    if ((entry.isFile() || entry.isSymbolicLink()) && !rules.ignores(path11)) {
+      return [path11];
     }
     return [];
   }));
   return paths.flat();
 }
-function escapePattern(path10) {
-  return path10.replace(/[\\*?[\\]!#]/g, "\\$&");
+function escapePattern(path11) {
+  return path11.replace(/[\\*?[\\]!#]/g, "\\$&");
 }
-async function readIgnoreFile(path10, required) {
-  if (!path10) {
+async function readIgnoreFile(path11, required) {
+  if (!path11) {
     return "";
   }
   try {
-    return await readFile(path10, "utf8");
+    return await readFile(path11, "utf8");
   } catch (error) {
     if (!isErrorCode(error, "ENOENT")) {
       throw error;
     }
     if (required) {
-      throw new ValidationError(`Ignore file ${path10} doesn't exist.`);
+      throw new ValidationError(`Ignore file ${path11} doesn't exist.`);
     }
     return "";
   }
@@ -24032,15 +24032,15 @@ async function findFiles(sourceDir, dir, rules) {
   const files = await Promise.all(entries.map((entry) => findEntryFiles(sourceDir, posix.join(dir, entry.name), entry, rules)));
   return files.flat();
 }
-async function findEntryFiles(sourceDir, path10, entry, rules) {
-  if (entry.isDirectory() && !rules.ignores(`${path10}/`)) {
-    return findFiles(sourceDir, path10, rules);
+async function findEntryFiles(sourceDir, path11, entry, rules) {
+  if (entry.isDirectory() && !rules.ignores(`${path11}/`)) {
+    return findFiles(sourceDir, path11, rules);
   }
-  if (entry.isFile() && !rules.ignores(path10)) {
-    return [path10];
+  if (entry.isFile() && !rules.ignores(path11)) {
+    return [path11];
   }
-  if (entry.isSymbolicLink() && !rules.ignores(path10)) {
-    throw new ValidationError(`${path10} is a symbolic link, which isn't supported. Exclude it or replace it with the file.`);
+  if (entry.isSymbolicLink() && !rules.ignores(path11)) {
+    throw new ValidationError(`${path11} is a symbolic link, which isn't supported. Exclude it or replace it with the file.`);
   }
   return [];
 }
@@ -24049,10 +24049,10 @@ async function findEntryFiles(sourceDir, path10, entry, rules) {
 var CHECKSUMS_EXTENSION = ".checksums.json";
 var CHECKSUM_ALGORITHMS = ["md5", "sha256"];
 var PACKAGE_TYPES = ["plugin", "theme"];
-async function hashFile(path10) {
+async function hashFile(path11) {
   const md5 = createHash("md5");
   const sha256 = createHash("sha256");
-  for await (const chunk of createReadStream(path10)) {
+  for await (const chunk of createReadStream(path11)) {
     md5.update(chunk);
     sha256.update(chunk);
   }
@@ -24080,24 +24080,24 @@ async function createChecksums(input2) {
 function isPackageType(type) {
   return PACKAGE_TYPES.includes(type);
 }
-async function writeChecksums(path10, manifest, force = false) {
-  await mkdir2(dirname(path10), { recursive: true });
+async function writeChecksums(path11, manifest, force = false) {
+  await mkdir2(dirname(path11), { recursive: true });
   try {
-    await writeFile2(path10, JSON.stringify(manifest, null, "	") + "\n", {
+    await writeFile2(path11, JSON.stringify(manifest, null, "	") + "\n", {
       flag: force ? "w" : "wx"
     });
   } catch (error) {
     if (isErrorCode(error, "EEXIST")) {
-      throw new ValidationError(`${path10} already exists, pass --force to overwrite it.`);
+      throw new ValidationError(`${path11} already exists, pass --force to overwrite it.`);
     }
     throw error;
   }
 }
-async function readChecksums(path10) {
-  const contents = await readFile2(path10, "utf8").catch((error) => {
-    throw isErrorCode(error, "ENOENT") ? new ValidationError(`Checksums file ${path10} doesn't exist.`) : error;
+async function readChecksums(path11) {
+  const contents = await readFile2(path11, "utf8").catch((error) => {
+    throw isErrorCode(error, "ENOENT") ? new ValidationError(`Checksums file ${path11} doesn't exist.`) : error;
   });
-  return parseChecksums(contents, path10);
+  return parseChecksums(contents, path11);
 }
 function parseChecksums(contents, source = "checksums") {
   const manifest = parseJson(contents, source);
@@ -24105,8 +24105,8 @@ function parseChecksums(contents, source = "checksums") {
   if (!isRecord(manifest) || !isRecord(files)) {
     throw new ValidationError(`${source} has no "files" object.`);
   }
-  const invalidPaths = Object.keys(files).filter((path10) => !isValidPath(path10));
-  const invalidHashes = Object.entries(files).filter(([, hashes]) => !isValidEntry(hashes)).map(([path10]) => path10);
+  const invalidPaths = Object.keys(files).filter((path11) => !isValidPath(path11));
+  const invalidHashes = Object.entries(files).filter(([, hashes]) => !isValidEntry(hashes)).map(([path11]) => path11);
   if (invalidPaths.length) {
     throw new ValidationError(`${source} has paths outside the package folder: ${invalidPaths.join(", ")}.`);
   }
@@ -24118,9 +24118,9 @@ function parseChecksums(contents, source = "checksums") {
 function isRecord(value) {
   return Boolean(value) && "object" === typeof value && !Array.isArray(value);
 }
-function isValidPath(path10) {
-  const segments = path10.split("/");
-  return !path10.includes("\\") && segments.every((segment) => segment && "." !== segment && ".." !== segment);
+function isValidPath(path11) {
+  const segments = path11.split("/");
+  return !path11.includes("\\") && segments.every((segment) => segment && "." !== segment && ".." !== segment);
 }
 function parseJson(contents, source) {
   try {
@@ -24134,11 +24134,11 @@ function isValidEntry(hashes) {
 }
 function compareChecksums(expected, actual) {
   const expectedPaths = Object.keys(expected).sort();
-  const present = expectedPaths.filter((path10) => Object.hasOwn(actual, path10));
-  const isMatch = (path10) => matchesChecksum(expected[path10], actual[path10]);
-  const changed = present.filter((path10) => !isMatch(path10));
-  const missing = expectedPaths.filter((path10) => !Object.hasOwn(actual, path10));
-  const extra = Object.keys(actual).filter((path10) => !Object.hasOwn(expected, path10)).sort();
+  const present = expectedPaths.filter((path11) => Object.hasOwn(actual, path11));
+  const isMatch = (path11) => matchesChecksum(expected[path11], actual[path11]);
+  const changed = present.filter((path11) => !isMatch(path11));
+  const missing = expectedPaths.filter((path11) => !Object.hasOwn(actual, path11));
+  const extra = Object.keys(actual).filter((path11) => !Object.hasOwn(expected, path11)).sort();
   return {
     valid: 0 === changed.length + missing.length + extra.length,
     matched: present.filter(isMatch),
@@ -24153,7 +24153,7 @@ function matchesChecksum(expected, actual) {
 }
 async function verifyChecksums(input2) {
   const { sourceDir, manifest, rules } = input2;
-  const expected = Object.fromEntries(Object.entries(manifest.files).filter(([path10]) => !rules.ignores(path10)));
+  const expected = Object.fromEntries(Object.entries(manifest.files).filter(([path11]) => !rules.ignores(path11)));
   const files = await selectFiles(sourceDir, rules);
   return compareChecksums(expected, await hashFiles(sourceDir, files));
 }
@@ -24276,8 +24276,8 @@ function matchReadmeHeader(line) {
   const header = README_HEADERS.find((name) => name.toLowerCase() === match?.[1]?.toLowerCase());
   return header && match?.[2] ? { header, value: match[2] } : null;
 }
-async function readFileStart(path10) {
-  const handle = await open2(path10, "r").catch((error) => {
+async function readFileStart(path11) {
+  const handle = await open2(path11, "r").catch((error) => {
     if (isErrorCode(error, "ENOENT")) {
       return null;
     }
@@ -24460,9 +24460,9 @@ function resolveDeployOptions(input2 = {}) {
 var WPORG_SVN_HOST = "https://plugins.svn.wordpress.org/";
 var SUMMARY_LIST_LIMIT = 100;
 function getWorkspacePath(workspace, file) {
-  const path10 = relative2(workspace, resolve3(file));
-  const inWorkspace = "" !== path10 && !path10.startsWith("..") && !isAbsolute2(path10);
-  return inWorkspace ? path10.split(sep).join("/") : null;
+  const path11 = relative2(workspace, resolve3(file));
+  const inWorkspace = "" !== path11 && !path11.startsWith("..") && !isAbsolute2(path11);
+  return inWorkspace ? path11.split(sep).join("/") : null;
 }
 function formatCode(text) {
   const longest = Math.max(0, ...[...text.matchAll(/`+/g)].map(([ticks]) => ticks.length));
@@ -24479,8 +24479,8 @@ function formatTable(header, rows) {
   ].join("\n");
 }
 function formatFile(context, file, line) {
-  const path10 = getWorkspacePath(context.workspace, file) ?? file;
-  return formatCode(`${path10}${line ? `:${line}` : ""}`);
+  const path11 = getWorkspacePath(context.workspace, file) ?? file;
+  return formatCode(`${path11}${line ? `:${line}` : ""}`);
 }
 function formatList(items) {
   const listed = items.slice(0, SUMMARY_LIST_LIMIT);
@@ -24523,7 +24523,7 @@ function getChecksumsSummary(context, result) {
 function getSignSummary(context, result) {
   return joinBlocks([
     "### Signatures",
-    formatList(result.signatures.map((path10) => formatFile(context, path10))),
+    formatList(result.signatures.map((path11) => formatFile(context, path11))),
     `Public key: ${formatCode(result.publicKey)}`
   ]);
 }
@@ -24591,7 +24591,7 @@ function getDeployWrites(options2) {
     readmeOnly && `trunk/${readme}`,
     svnTag && `tags/${normalizeTag(svnTag)}/`,
     assets && assetsDir && "assets/"
-  ].filter((path10) => Boolean(path10));
+  ].filter((path11) => Boolean(path11));
 }
 function describeDeployResult(input2) {
   const { options: options2, committed, revision, changes } = input2;
@@ -24613,9 +24613,9 @@ function getDeploySummary(input2) {
       `**Writes:** ${getDeployWrites(options2).map(formatCode).join(", ")}`,
       `**Result:** ${describeDeployResult(input2)}`
     ]),
-    changes.length > 0 && formatDetails(`SVN changes (${changes.length})`, formatTable(["Status", "Path"], changes.slice(0, SUMMARY_LIST_LIMIT).map(({ status, path: path10 }) => [
+    changes.length > 0 && formatDetails(`SVN changes (${changes.length})`, formatTable(["Status", "Path"], changes.slice(0, SUMMARY_LIST_LIMIT).map(({ status, path: path11 }) => [
       status,
-      formatCode(path10)
+      formatCode(path11)
     ])) + (changes.length > SUMMARY_LIST_LIMIT ? `
 
 \u2026 and ${changes.length - SUMMARY_LIST_LIMIT} more` : ""))
@@ -24731,19 +24731,19 @@ function getPublicKey(privateKey) {
   });
   return der.subarray(SPKI_PREFIX.length).toString("base64");
 }
-async function getFileDigest(path10) {
+async function getFileDigest(path11) {
   const hash = createHash2("sha384");
-  for await (const chunk of createReadStream2(path10)) {
+  for await (const chunk of createReadStream2(path11)) {
     hash.update(chunk);
   }
   return hash.digest();
 }
-async function signFile(path10, privateKey) {
-  return sign(null, await getFileDigest(path10), privateKey).toString("base64");
+async function signFile(path11, privateKey) {
+  return sign(null, await getFileDigest(path11), privateKey).toString("base64");
 }
-async function writeSignature(path10, privateKey, force = false) {
-  const signaturePath = path10 + SIGNATURE_EXTENSION;
-  const signature = await signFile(path10, privateKey);
+async function writeSignature(path11, privateKey, force = false) {
+  const signaturePath = path11 + SIGNATURE_EXTENSION;
+  const signature = await signFile(path11, privateKey);
   await writeFile3(signaturePath, signature + "\n", {
     flag: force ? "w" : "wx"
   }).catch((error) => {
@@ -24751,8 +24751,8 @@ async function writeSignature(path10, privateKey, force = false) {
   });
   return signaturePath;
 }
-async function verifyFileSignature(path10, signaturePath, publicKey) {
-  const digest = await getFileDigest(path10);
+async function verifyFileSignature(path11, signaturePath, publicKey) {
+  const digest = await getFileDigest(path11);
   const signatures = (await readFile4(signaturePath, "utf8")).split("\n").map((line) => line.trim()).filter(Boolean);
   return signatures.some((signature) => verify(null, digest, publicKey, Buffer.from(signature, "base64")));
 }
@@ -24789,25 +24789,25 @@ function checkPositionals(positionals, max) {
   }
   return positionals;
 }
-async function checkDirectory(path10) {
-  if (!await isDirectory2(path10)) {
-    throw new ValidationError(`${path10} is not a directory.`);
+async function checkDirectory(path11) {
+  if (!await isDirectory2(path11)) {
+    throw new ValidationError(`${path11} is not a directory.`);
   }
 }
-async function isDirectory2(path10) {
-  const stats = await stat2(path10).catch(() => null);
+async function isDirectory2(path11) {
+  const stats = await stat2(path11).catch(() => null);
   return Boolean(stats?.isDirectory());
 }
-function ignoreOwnFile(rules, sourceDir, path10) {
-  const relativePath = relative3(sourceDir, path10).split("\\").join("/");
+function ignoreOwnFile(rules, sourceDir, path11) {
+  const relativePath = relative3(sourceDir, path11).split("\\").join("/");
   const isInside = relativePath && ".." !== relativePath && !relativePath.startsWith("../") && !isAbsolute3(relativePath);
   if (isInside) {
     rules.add(`/${relativePath.replace(/[\\*?[\]!#]/g, "\\$&")}`);
   }
   return rules;
 }
-function ignoreOwnSignature(rules, sourceDir, path10) {
-  return ignoreOwnFile(rules, sourceDir, path10 + SIGNATURE_EXTENSION);
+function ignoreOwnSignature(rules, sourceDir, path11) {
+  return ignoreOwnFile(rules, sourceDir, path11 + SIGNATURE_EXTENSION);
 }
 var sourceDirArgs = {
   "source-dir": { type: "string" }
@@ -24831,7 +24831,7 @@ function getChecksumsPath(zipPath) {
   return name + CHECKSUMS_EXTENSION;
 }
 function checkOverwrite(paths, force) {
-  const existing = paths.filter((path10) => !force && existsSync3(path10));
+  const existing = paths.filter((path11) => !force && existsSync3(path11));
   if (existing.length) {
     throw new ValidationError(`${existing.join(" and ")} already exists, pass --force to overwrite it.`);
   }
@@ -25046,16 +25046,16 @@ that belongs to the signing key.`,
     const privateKey = parseSigningKey(encoded);
     const publicKey = getPublicKey(privateKey);
     const paths = positionals.map((file) => resolve7(cwd, file));
-    await Promise.all(paths.map(async (path10) => {
-      if (!(await stat3(path10).catch(() => null))?.isFile()) {
-        throw new ValidationError(`${path10} is not a file.`);
+    await Promise.all(paths.map(async (path11) => {
+      if (!(await stat3(path11).catch(() => null))?.isFile()) {
+        throw new ValidationError(`${path11} is not a file.`);
       }
     }));
     logger2.debug(`Signing with the public key ${publicKey}.`);
     const signatures = [];
     const force = getBoolean(values, "force");
-    for (const path10 of paths) {
-      const signaturePath = await writeSignature(path10, privateKey, force);
+    for (const path11 of paths) {
+      const signaturePath = await writeSignature(path11, privateKey, force);
       logger2.info(signaturePath);
       signatures.push(signaturePath);
     }
@@ -25099,12 +25099,12 @@ import { pipeline as pipeline2 } from "node:stream/promises";
 function isUrl(location) {
   return /^https?:\/\//i.test(location);
 }
-async function downloadFile(url, path10) {
+async function downloadFile(url, path11) {
   const response = await fetch(url);
   if (!response.ok || !response.body) {
     throw new ValidationError(`Couldn't download ${url}: ${response.status} ${response.statusText}`.trim());
   }
-  await pipeline2(Readable.fromWeb(response.body), createWriteStream2(path10));
+  await pipeline2(Readable.fromWeb(response.body), createWriteStream2(path11));
 }
 
 // ../../js/wp-release/dist/report.js
@@ -25160,19 +25160,19 @@ async function readZipEntries(zipPath) {
   return entries;
 }
 function getZipEntryErrors(entries, rootFolder = null) {
-  const errors = entries.map(({ path: path10, type }) => {
-    if (path10.startsWith("/") || /^[a-zA-Z]:/.test(path10)) {
-      return `${path10} is an absolute path.`;
+  const errors = entries.map(({ path: path11, type }) => {
+    if (path11.startsWith("/") || /^[a-zA-Z]:/.test(path11)) {
+      return `${path11} is an absolute path.`;
     }
-    const segments = path10.split("/");
-    if (path10.includes("\\") || segments.includes("..")) {
-      return `${path10} is outside the archive root.`;
+    const segments = path11.split("/");
+    if (path11.includes("\\") || segments.includes("..")) {
+      return `${path11} is outside the archive root.`;
     }
     if ("symlink" === type) {
-      return `${path10} is a symbolic link, which isn't supported.`;
+      return `${path11} is a symbolic link, which isn't supported.`;
     }
     if (rootFolder && segments[0] !== rootFolder) {
-      return `${path10} isn't in the ${rootFolder}/ root folder.`;
+      return `${path11} isn't in the ${rootFolder}/ root folder.`;
     }
     return null;
   });
@@ -25187,12 +25187,12 @@ async function extractZip(input2) {
 ${errors.join("\n")}`);
   }
   await readEntries(zipPath, async (entry, zip) => {
-    const path10 = rootFolder ? entry.fileName.split("/").slice(1).join("/") : entry.fileName;
-    if (path10 && "file" === getEntryType(entry)) {
-      const target = join5(targetDir, path10);
+    const path11 = rootFolder ? entry.fileName.split("/").slice(1).join("/") : entry.fileName;
+    if (path11 && "file" === getEntryType(entry)) {
+      const target = join5(targetDir, path11);
       await mkdir3(dirname2(target), { recursive: true });
       await pipeline3(await openReadStream(zip, entry), createWriteStream3(target, { flags: "wx" }));
-      files.push(path10);
+      files.push(path11);
     }
   });
   return files.sort();
@@ -25212,7 +25212,7 @@ async function checkSignature(checksumsPath, publicKey) {
   }
 }
 async function findRootFolder(zipPath) {
-  const roots = new Set((await readZipEntries(zipPath)).map(({ path: path10 }) => path10.split("/")[0] ?? ""));
+  const roots = new Set((await readZipEntries(zipPath)).map(({ path: path11 }) => path11.split("/")[0] ?? ""));
   const [root] = [...roots];
   if (1 !== roots.size || !root) {
     throw new ValidationError(`${zipPath} must have all files in one root folder, or pass the folder with --root-folder.`);
@@ -25246,18 +25246,18 @@ async function resolveTarget(input2) {
   }
 }
 function getEmbeddedPath(checksumsPath, embedded) {
-  const path10 = posix3.normalize(embedded ?? basename4(checksumsPath));
-  if (embedded && (isAbsolute4(embedded) || embedded.includes("\\") || path10.startsWith("../") || [".", ".."].includes(path10))) {
+  const path11 = posix3.normalize(embedded ?? basename4(checksumsPath));
+  if (embedded && (isAbsolute4(embedded) || embedded.includes("\\") || path11.startsWith("../") || [".", ".."].includes(path11))) {
     throw new ValidationError(`--embedded must be a path inside the plugin with forward slashes, got "${embedded}".`);
   }
-  return embedded || path10.endsWith(".json") ? path10 : null;
+  return embedded || path11.endsWith(".json") ? path11 : null;
 }
-function getCopyPairs(checksumsPath, path10) {
-  return path10 ? [
-    { original: checksumsPath, copy: path10 },
+function getCopyPairs(checksumsPath, path11) {
+  return path11 ? [
+    { original: checksumsPath, copy: path11 },
     {
       original: checksumsPath + SIGNATURE_EXTENSION,
-      copy: path10 + SIGNATURE_EXTENSION
+      copy: path11 + SIGNATURE_EXTENSION
     }
   ] : [];
 }
@@ -25688,6 +25688,1040 @@ no Stable tag, so it's only checked for plugins.`,
   }
 };
 
+// ../../js/wp-release/dist/package-deploy.js
+import { realpath as realpath2 } from "node:fs/promises";
+import path6 from "node:path";
+
+// ../../js/wp-release/dist/changeset-config.js
+import { access as access2 } from "node:fs/promises";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+var __rewriteRelativeImportExtension = function(path11, preserveJsx) {
+  if (typeof path11 === "string" && /^\.\.?\//.test(path11)) {
+    return path11.replace(/\.(tsx)$|((?:\.d)?)((?:\.[^./]+?)?)\.([cm]?)ts$/i, function(m, tsx, d, ext, cm) {
+      return tsx ? preserveJsx ? ".jsx" : ".js" : d && (!ext || !cm) ? m : d + ext + "." + cm.toLowerCase() + "js";
+    });
+  }
+  return path11;
+};
+var CONFIG_FILES = [
+  "wp-release.config.js",
+  "wp-release.config.mjs",
+  "wp-release.config.cjs"
+];
+async function loadChangesetConfig(input2 = {}) {
+  const cwd = path.resolve(input2.cwd ?? process.cwd());
+  const configFile = input2.configFile ? path.resolve(cwd, input2.configFile) : await findConfigFile(cwd);
+  if (!configFile) {
+    return void 0;
+  }
+  let loaded;
+  try {
+    loaded = await import(__rewriteRelativeImportExtension(pathToFileURL(configFile).href));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new ValidationError(`Could not load wp-release config ${configFile}: ${message}`);
+  }
+  const config = "object" === typeof loaded && null !== loaded && "default" in loaded ? loaded.default : void 0;
+  validateChangesetConfig(config, configFile);
+  return { config, file: configFile };
+}
+async function findConfigFile(cwd) {
+  for (const fileName of CONFIG_FILES) {
+    const candidate = path.join(cwd, fileName);
+    try {
+      await access2(candidate);
+      return candidate;
+    } catch {
+    }
+  }
+  return void 0;
+}
+function validateChangesetConfig(config, configFile) {
+  if ("object" !== typeof config || null === config || Array.isArray(config)) {
+    throw new ValidationError(`wp-release config ${configFile} must default-export a configuration object.`);
+  }
+  const candidate = config;
+  if (!Array.isArray(candidate.packages)) {
+    throw new ValidationError(`wp-release config ${configFile} must define a packages array.`);
+  }
+  for (const [key, value] of Object.entries({
+    baseBranch: candidate.baseBranch,
+    changesets: candidate.changesets,
+    changelogInsertAfter: candidate.changelogInsertAfter,
+    root: candidate.root
+  })) {
+    if (void 0 !== value && "string" !== typeof value) {
+      throw new ValidationError(`wp-release config ${configFile}.${key} must be a string.`);
+    }
+  }
+  if ("" === candidate.changelogInsertAfter) {
+    throw new ValidationError(`wp-release config ${configFile}.changelogInsertAfter must not be empty.`);
+  }
+  if (void 0 !== candidate.tagFormat && "string" !== typeof candidate.tagFormat) {
+    throw new ValidationError(`wp-release config ${configFile}.tagFormat must be a string.`);
+  }
+  if (void 0 !== candidate.readmeChangelog && "boolean" !== typeof candidate.readmeChangelog) {
+    throw new ValidationError(`wp-release config ${configFile}.readmeChangelog must be a boolean.`);
+  }
+  if (void 0 !== candidate.nextVersion && "function" !== typeof candidate.nextVersion) {
+    throw new ValidationError(`wp-release config ${configFile}.nextVersion must be a function.`);
+  }
+  if (void 0 !== candidate.changelogEntry && "function" !== typeof candidate.changelogEntry) {
+    throw new ValidationError(`wp-release config ${configFile}.changelogEntry must be a function.`);
+  }
+  if (void 0 !== candidate.dependents && ("object" !== typeof candidate.dependents || Array.isArray(candidate.dependents) || null === candidate.dependents)) {
+    throw new ValidationError(`wp-release config ${configFile}.dependents must be an object.`);
+  }
+  const dependentsOptions = candidate.dependents;
+  if (void 0 !== dependentsOptions?.bump && !["patch", "minor", "major"].includes(dependentsOptions.bump)) {
+    throw new ValidationError(`wp-release config ${configFile}.dependents.bump must be patch, minor or major.`);
+  }
+  if (void 0 !== dependentsOptions?.exclude && (!Array.isArray(dependentsOptions.exclude) || !dependentsOptions.exclude.length || dependentsOptions.exclude.some((item) => "string" !== typeof item || !item.trim()))) {
+    throw new ValidationError(`wp-release config ${configFile}.dependents.exclude must be an array of non-empty strings.`);
+  }
+  if (void 0 !== dependentsOptions?.when && !["out-of-range", "always"].includes(dependentsOptions.when)) {
+    throw new ValidationError(`wp-release config ${configFile}.dependents.when must be out-of-range or always.`);
+  }
+  if (void 0 !== dependentsOptions?.sections && (!Array.isArray(dependentsOptions.sections) || !dependentsOptions.sections.length || dependentsOptions.sections.some((section) => ![
+    "dependencies",
+    "optionalDependencies",
+    "peerDependencies",
+    "devDependencies"
+  ].includes(section)))) {
+    throw new ValidationError(`wp-release config ${configFile}.dependents.sections must be a list of dependencies, optionalDependencies, peerDependencies or devDependencies.`);
+  }
+  if (void 0 !== dependentsOptions?.changelog && "function" !== typeof dependentsOptions.changelog) {
+    throw new ValidationError(`wp-release config ${configFile}.dependents.changelog must be a function.`);
+  }
+  if (void 0 !== dependentsOptions?.dependency) {
+    if ("object" !== typeof dependentsOptions.dependency || null === dependentsOptions.dependency) {
+      throw new ValidationError(`wp-release config ${configFile}.dependents.dependency must be an object.`);
+    }
+    ["find", "update"].forEach((key) => {
+      if (void 0 !== dependentsOptions.dependency[key] && "function" !== typeof dependentsOptions.dependency[key]) {
+        throw new ValidationError(`wp-release config ${configFile}.dependents.dependency.${key} must be a function.`);
+      }
+    });
+  }
+  if (void 0 !== candidate.releaseNotes && "function" !== typeof candidate.releaseNotes) {
+    throw new ValidationError(`wp-release config ${configFile}.releaseNotes must be a function.`);
+  }
+  validateFilesConfig(candidate.files, `${configFile}.files`);
+  candidate.packages.forEach((group, index) => {
+    if ("object" !== typeof group || null === group || void 0 !== group.version && ("object" !== typeof group.version || null === group.version || "object" !== typeof group.version.from || !Array.isArray(group.version.to))) {
+      throw new ValidationError(`wp-release config ${configFile} has an invalid packages[${index}] entry.`);
+    }
+    if (void 0 !== group.idFrom && !["path", "package.json#name", "composer.json#name"].includes(group.idFrom)) {
+      throw new ValidationError(`wp-release config ${configFile} packages[${index}].idFrom is not supported.`);
+    }
+    if ("string" !== typeof group.glob || !group.glob.trim()) {
+      throw new ValidationError(`wp-release config ${configFile} packages[${index}].glob must be a non-empty string.`);
+    }
+    if ("string" !== typeof group.tagType && void 0 !== group.tagType) {
+      throw new ValidationError(`wp-release config ${configFile} packages[${index}].tagType must be a string.`);
+    }
+    if (void 0 !== group.exclude && (!Array.isArray(group.exclude) || group.exclude.some((item) => "string" !== typeof item))) {
+      throw new ValidationError(`wp-release config ${configFile} packages[${index}].exclude must be an array of strings.`);
+    }
+    if (group.version) {
+      validateVersionDescriptor(group.version.from, `${configFile}.packages[${index}].version.from`, false);
+      group.version.to.forEach((target, targetIndex) => validateVersionDescriptor(target, `${configFile}.packages[${index}].version.to[${targetIndex}]`, true));
+    }
+    validateFilesConfig(group.files, `${configFile}.packages[${index}].files`);
+    validateDeployConfig(group.deploy, `${configFile}.packages[${index}].deploy`);
+  });
+}
+function isObject(value) {
+  return "object" === typeof value && null !== value && !Array.isArray(value);
+}
+function validateFilesConfig(files, location) {
+  if (void 0 !== files && !isObject(files)) {
+    throw new ValidationError(`wp-release config ${location} must be an object.`);
+  }
+  const { distignore, exclude } = files ?? {};
+  if (void 0 !== distignore && false !== distignore && ("string" !== typeof distignore || !distignore)) {
+    throw new ValidationError(`wp-release config ${location}.distignore must be a file path or false.`);
+  }
+  if (void 0 !== exclude && (!Array.isArray(exclude) || exclude.some((item) => "string" !== typeof item))) {
+    throw new ValidationError(`wp-release config ${location}.exclude must be an array of strings.`);
+  }
+}
+function validateDeployConfig(deploy, location) {
+  if (void 0 !== deploy && !isObject(deploy)) {
+    throw new ValidationError(`wp-release config ${location} must be an object.`);
+  }
+  const targets = deploy ?? {};
+  Object.keys(targets).forEach((key) => {
+    if (!["git", "svn"].includes(key)) {
+      throw new ValidationError(`wp-release config ${location}.${key} is not a deploy target; use git or svn.`);
+    }
+  });
+  toTargetList(targets.git).forEach((target, index) => validateGitTarget(target, `${location}.git[${index}]`));
+  toTargetList(targets.svn).forEach((target, index) => validateSvnTarget(target, `${location}.svn[${index}]`));
+}
+function toTargetList(value) {
+  if (void 0 === value) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+function isTemplate(value) {
+  return "string" === typeof value && "" !== value || "function" === typeof value;
+}
+function validateGitTarget(target, location) {
+  if (!isObject(target) || !isTemplate(target.repository)) {
+    throw new ValidationError(`wp-release config ${location} must be an object with a repository URL template or callback.`);
+  }
+  if (void 0 !== target.branches && "boolean" !== typeof target.branches && (!Array.isArray(target.branches) || target.branches.some((item) => "string" !== typeof item))) {
+    throw new ValidationError(`wp-release config ${location}.branches must be a boolean or an array of branch names.`);
+  }
+  if (void 0 !== target.tag && false !== target.tag && ("string" !== typeof target.tag || !target.tag.includes("{version}"))) {
+    throw new ValidationError(`wp-release config ${location}.tag must be a template with {version}, or false.`);
+  }
+  validateMessage(target.message, location);
+  if (void 0 !== target.history && "boolean" !== typeof target.history) {
+    throw new ValidationError(`wp-release config ${location}.history must be a boolean.`);
+  }
+}
+function validateMessage(message, location) {
+  if (void 0 !== message && !isTemplate(message)) {
+    throw new ValidationError(`wp-release config ${location}.message must be a template or a callback.`);
+  }
+}
+function validateSvnTarget(target, location) {
+  if (!isObject(target)) {
+    throw new ValidationError(`wp-release config ${location} must be an object.`);
+  }
+  validateMessage(target.message, location);
+  if (void 0 !== target.slug && !isTemplate(target.slug)) {
+    throw new ValidationError(`wp-release config ${location}.slug must be a template or a callback.`);
+  }
+  for (const key of ["url", "assetsDir", "readme"]) {
+    if (void 0 !== target[key] && ("string" !== typeof target[key] || !target[key])) {
+      throw new ValidationError(`wp-release config ${location}.${key} must be a non-empty string.`);
+    }
+  }
+}
+function validateVersionDescriptor(descriptor, location, isTarget) {
+  if ("object" !== typeof descriptor || null === descriptor) {
+    throw new ValidationError(`wp-release config ${location} must be an object.`);
+  }
+  const candidate = descriptor;
+  const sourceKinds = [
+    "package-json",
+    "composer-json",
+    "wordpress-plugin-header",
+    "wordpress-theme-header",
+    "wordpress-stable-tag",
+    "php-constant",
+    "git-tag"
+  ];
+  const targetKinds = sourceKinds.filter((kind) => "git-tag" !== kind);
+  const kinds = isTarget ? targetKinds : sourceKinds;
+  if ("string" !== typeof candidate.kind || !kinds.includes(candidate.kind)) {
+    throw new ValidationError(`wp-release config ${location}.kind is not supported.`);
+  }
+  const needsFile = [
+    "package-json",
+    "composer-json",
+    "php-constant"
+  ].includes(candidate.kind);
+  if (needsFile && ("string" !== typeof candidate.file || !candidate.file.trim())) {
+    throw new ValidationError(`wp-release config ${location}.file must be a non-empty string.`);
+  }
+  if (["package-json", "composer-json"].includes(candidate.kind) && "version" !== candidate.field) {
+    throw new ValidationError(`wp-release config ${location}.field must be "version".`);
+  }
+  if ("php-constant" === candidate.kind && ("string" !== typeof candidate.constant || !candidate.constant.trim())) {
+    throw new ValidationError(`wp-release config ${location}.constant must be a non-empty string.`);
+  }
+  if ("git-tag" === candidate.kind && void 0 !== candidate.pattern && "string" !== typeof candidate.pattern) {
+    throw new ValidationError(`wp-release config ${location}.pattern must be a string.`);
+  }
+  if (void 0 !== candidate.ifPresent && "boolean" !== typeof candidate.ifPresent) {
+    throw new ValidationError(`wp-release config ${location}.ifPresent must be a boolean.`);
+  }
+}
+
+// ../../js/wp-release/dist/changeset-packages.js
+import { readdir as readdir4 } from "node:fs/promises";
+import path4 from "node:path";
+
+// ../../js/wp-release/dist/json-files.js
+import { readFile as readFile7 } from "node:fs/promises";
+async function readJson(file) {
+  try {
+    return JSON.parse(await readFile7(file, "utf8"));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new ValidationError(`Could not read JSON manifest ${file}: ${message}`);
+  }
+}
+async function readJsonIfExists(file) {
+  try {
+    return JSON.parse(await readFile7(file, "utf8"));
+  } catch (error) {
+    if ("ENOENT" !== error.code) {
+      throw error;
+    }
+    return void 0;
+  }
+}
+
+// ../../js/wp-release/dist/version-files.js
+import { access as access3, readFile as readFile8, writeFile as writeFile4 } from "node:fs/promises";
+import path3 from "node:path";
+
+// ../../js/wp-release/dist/tag-format.js
+import path2 from "node:path";
+function formatTag(format, pkg, version) {
+  const type = pkg.group.tagType ?? defaultTagType(pkg.path, pkg.type);
+  return format.replaceAll("{name}", pkg.name).replaceAll("{slug}", "." === pkg.path ? path2.basename(pkg.directory) : path2.basename(pkg.path)).replaceAll("{path}", pkg.path).replaceAll("{type}", type).replaceAll("{version}", version);
+}
+function formatTemplatePrefix(pattern, packagePath, tagType) {
+  return pattern.replaceAll("{path}", packagePath).replaceAll("{type}", tagType ?? defaultTagType(packagePath)).replaceAll("{name}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{slug}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{version}", "");
+}
+function defaultTagType(packagePath, type) {
+  if ("." === packagePath && type) {
+    return type;
+  }
+  const first = packagePath.split("/")[0] ?? "package";
+  const irregular = {
+    actions: "action",
+    plugins: "plugin",
+    themes: "theme",
+    php: "php",
+    js: "js"
+  };
+  return irregular[first] ?? first.replace(/s$/, "");
+}
+
+// ../../js/wp-release/dist/versions.js
+var VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
+var PRERELEASE_INPUT_PATTERN = /^([A-Za-z][0-9A-Za-z-]*)(?:\.(0|[1-9]\d*))?$/;
+var SNAPSHOT_ID_PATTERN = /^[A-Za-z][0-9A-Za-z-]*(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*$/;
+function isVersion(version) {
+  return VERSION_PATTERN.test(version);
+}
+function isPrerelease2(version) {
+  return Boolean(VERSION_PATTERN.exec(version)?.[4]);
+}
+function compareVersions(left, right) {
+  const [leftCore = "", leftPre] = splitPrerelease(left);
+  const [rightCore = "", rightPre] = splitPrerelease(right);
+  const a = leftCore.split(".").map(Number);
+  const b = rightCore.split(".").map(Number);
+  const core = (a[0] ?? 0) - (b[0] ?? 0) || (a[1] ?? 0) - (b[1] ?? 0) || (a[2] ?? 0) - (b[2] ?? 0);
+  if (core || leftPre === rightPre) {
+    return core;
+  }
+  if (void 0 === leftPre || void 0 === rightPre) {
+    return void 0 === leftPre ? 1 : -1;
+  }
+  return comparePrerelease(leftPre.split("."), rightPre.split("."));
+}
+function splitPrerelease(version) {
+  const index = version.indexOf("-");
+  return -1 === index ? [version] : [version.slice(0, index), version.slice(index + 1)];
+}
+function comparePrerelease(left, right) {
+  const [a, ...leftRest] = left;
+  const [b, ...rightRest] = right;
+  if (void 0 === a || void 0 === b) {
+    return (void 0 === a ? 0 : 1) - (void 0 === b ? 0 : 1);
+  }
+  const order = compareIdentifier(a, b);
+  return order || comparePrerelease(leftRest, rightRest);
+}
+function compareIdentifier(a, b) {
+  const aNumeric = /^\d+$/.test(a);
+  const bNumeric = /^\d+$/.test(b);
+  if (aNumeric && bNumeric) {
+    return Number(a) - Number(b);
+  }
+  if (aNumeric || bNumeric) {
+    return aNumeric ? -1 : 1;
+  }
+  return Number(a > b) - Number(a < b);
+}
+function getPrereleaseVersion(stable, prerelease, existing) {
+  const match = PRERELEASE_INPUT_PATTERN.exec(prerelease);
+  if (!match) {
+    throw new ValidationError(`Invalid pre-release "${prerelease}"; expected an identifier with an optional number, like rc or rc.1.`);
+  }
+  if (!isVersion(stable) || isPrerelease2(stable)) {
+    throw new ValidationError(`Cannot release "${stable}" as a pre-release: expected a stable x.y.z version.`);
+  }
+  const identifier = match[1] ?? "";
+  const version = match[2] ? `${stable}-${prerelease}` : `${stable}-${identifier}.${getNextPrereleaseNumber(`${stable}-${identifier}.`, existing)}`;
+  if (existing.includes(version)) {
+    throw new ValidationError(`Version ${version} already exists; pass a pre-release without a number to release the next one.`);
+  }
+  return version;
+}
+function getNextPrereleaseNumber(prefix, existing) {
+  const numbers = existing.filter((version) => version.startsWith(prefix)).map((version) => version.slice(prefix.length)).filter((number) => /^\d+$/.test(number)).map(Number);
+  return Math.max(0, ...numbers) + 1;
+}
+function getSnapshotVersion(stable, id, time) {
+  if (!SNAPSHOT_ID_PATTERN.test(id)) {
+    throw new ValidationError(`Invalid snapshot "${id}"; expected SemVer pre-release identifiers that start with a letter, like pr-251.`);
+  }
+  if (!isVersion(stable) || isPrerelease2(stable)) {
+    throw new ValidationError(`Cannot release "${stable}" as a snapshot: expected a stable x.y.z version.`);
+  }
+  const timestamp = time.toISOString().replace(/\D/g, "").slice(0, 14);
+  return `${stable}-${id}.${timestamp}`;
+}
+
+// ../../js/wp-release/dist/version-files.js
+async function readVersion(repository, directory, descriptor, relativePath, tagType) {
+  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
+    const manifest = await readJson(path3.join(directory, descriptor.file));
+    const version = manifest[descriptor.field];
+    if ("string" === typeof version && version.trim()) {
+      return version;
+    }
+    throw new ValidationError(`Missing ${descriptor.file}#${descriptor.field} in ${directory}.`);
+  }
+  if ("git-tag" === descriptor.kind) {
+    const pattern = descriptor.pattern ?? "{path}/{version}";
+    const tags = await repository.listTags(formatTemplatePrefix(pattern, relativePath, tagType));
+    const versions = tags.map((tag) => tag.match(/(?:^|\/|v)(\d+\.\d+\.\d+)$/)?.[1]).filter((item) => Boolean(item));
+    versions.sort((a, b) => compareVersions(b, a));
+    if (versions[0]) {
+      return versions[0];
+    }
+    throw new ValidationError(`No git tag matches ${pattern} for ${relativePath}.`);
+  }
+  if ("php-constant" === descriptor.kind) {
+    const file2 = path3.join(directory, descriptor.file);
+    const contents2 = await readFile8(file2, "utf8");
+    const versions = findConstantValues(contents2, descriptor.constant);
+    if (versions[0]) {
+      return versions[0];
+    }
+    throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
+  }
+  const file = path3.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
+  const contents = await readFile8(file, "utf8");
+  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
+  const match = new RegExp(`^\\s*\\*?\\s*${label}:\\s*([^\\r\\n]+)`, "im").exec(contents);
+  if (!match) {
+    throw new ValidationError(`Missing ${label} header in ${file}.`);
+  }
+  return match[1]?.trim() ?? "";
+}
+async function writeVersion(directory, descriptor, version, journal) {
+  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
+    const file2 = path3.join(directory, descriptor.file);
+    const contents2 = await readFile8(file2, "utf8");
+    const manifest = JSON.parse(contents2);
+    if ("composer-json" === descriptor.kind && descriptor.ifPresent && !Object.hasOwn(manifest, descriptor.field)) {
+      return;
+    }
+    manifest[descriptor.field] = version;
+    await journal.remember(file2);
+    await writeFile4(file2, `${JSON.stringify(manifest, null, "	")}
+`);
+    return;
+  }
+  if ("php-constant" === descriptor.kind) {
+    const file2 = path3.join(directory, descriptor.file);
+    const contents2 = await readFile8(file2, "utf8");
+    const constant = escapeRegExp(descriptor.constant);
+    const definePattern = new RegExp(`(\\bdefine\\s*\\(\\s*(['"])${constant}\\2\\s*,\\s*)(['"])(.*?)\\3`, "g");
+    const declarationPattern = new RegExp(`(\\bconst\\s+${constant}\\s*=\\s*)(['"])(.*?)\\2`, "g");
+    const updated = contents2.replace(definePattern, (_match, prefix, _nameQuote, quote) => `${prefix}${quote}${version}${quote}`).replace(declarationPattern, (_match, prefix, quote) => `${prefix}${quote}${version}${quote}`);
+    if (updated === contents2) {
+      throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
+    }
+    await journal.remember(file2);
+    await writeFile4(file2, updated);
+    return;
+  }
+  if ("wordpress-stable-tag" === descriptor.kind && (isPrerelease2(version) || descriptor.ifPresent && !await versionFileExists(directory, descriptor.kind, descriptor.file))) {
+    return;
+  }
+  const file = path3.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
+  const contents = await readFile8(file, "utf8");
+  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
+  const expression = new RegExp(`(^\\s*\\*?\\s*${label}:\\s*)[^\\r\\n]+`, "im");
+  if (!expression.test(contents)) {
+    throw new ValidationError(`Missing ${label} header in ${file}.`);
+  }
+  await journal.remember(file);
+  await writeFile4(file, contents.replace(expression, `$1${version}`));
+}
+async function verifyVersionTargets(repository, pkg, expected) {
+  for (const target of pkg.versionConfig.to) {
+    let actual;
+    if ("composer-json" === target.kind && target.ifPresent && !Object.hasOwn(await readJson(path3.join(pkg.directory, target.file)), target.field)) {
+      actual = void 0;
+    } else if ("wordpress-stable-tag" === target.kind && (isPrerelease2(expected) || target.ifPresent && !await versionFileExists(pkg.directory, target.kind, target.file))) {
+      actual = void 0;
+    } else {
+      actual = await readVersion(repository, pkg.directory, target, pkg.path, pkg.group.tagType);
+    }
+    if (void 0 !== actual && actual !== expected) {
+      throw new ValidationError(`Version mismatch for ${pkg.name}: expected ${expected}, found ${actual}.`);
+    }
+  }
+}
+async function getVersionFile(directory, kind, configuredFile) {
+  if (configuredFile) {
+    return configuredFile;
+  }
+  if ("wordpress-plugin-header" === kind) {
+    const file = await findMainPluginFile({ dir: directory });
+    if (file) {
+      return file;
+    }
+    throw new ValidationError(`Could not find a plugin header file in ${directory}.`);
+  }
+  if ("wordpress-stable-tag" === kind) {
+    for (const file of ["readme.txt", "readme.md"]) {
+      try {
+        await access3(path3.join(directory, file));
+        return file;
+      } catch {
+      }
+    }
+    throw new ValidationError(`Could not find readme.txt or readme.md in ${directory}.`);
+  }
+  return "style.css";
+}
+async function versionFileExists(directory, kind, configuredFile) {
+  if (configuredFile) {
+    try {
+      await access3(path3.join(directory, configuredFile));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if ("wordpress-stable-tag" === kind) {
+    const files = await Promise.all(["readme.txt", "readme.md"].map(async (file) => {
+      try {
+        await access3(path3.join(directory, file));
+        return true;
+      } catch {
+        return false;
+      }
+    }));
+    return files.some(Boolean);
+  }
+  return true;
+}
+
+// ../../js/wp-release/dist/changeset-packages.js
+var SKIPPED_DIRECTORIES = [".git", "node_modules", "vendor", "dist"];
+async function discoverPackages(repository, config) {
+  const found = await findGroupPackages(repository, config, config.packages.filter((group) => group.version));
+  const packages = [];
+  for (const pkg of found) {
+    const versionConfig = pkg.group.version;
+    packages.push({
+      ...pkg,
+      currentVersion: await readVersion(repository, pkg.directory, versionConfig.from, pkg.path, pkg.group.tagType),
+      versionConfig
+    });
+  }
+  return packages;
+}
+async function discoverDeployPackages(repository, config) {
+  return findGroupPackages(repository, config, config.packages.filter((group) => group.deploy));
+}
+async function findGroupPackages(repository, config, groups) {
+  const root = path4.resolve(repository.cwd, config.root ?? ".");
+  const packages = [];
+  const hasRecursiveGlob = groups.some((item) => item.glob.split("/").includes("**"));
+  const directories = await findDirectories(root, "", hasRecursiveGlob ? Infinity : Math.max(1, ...groups.map((item) => item.glob.split("/").length + 2)));
+  for (const group of groups) {
+    const matcher = globRegExp(group.glob);
+    const candidates = matcher.test(".") ? [".", ...directories] : directories;
+    const matches = candidates.filter((item) => matcher.test(item) && !(group.exclude ?? []).some((excluded) => globRegExp(excluded).test(item))).sort();
+    if (!matches.length) {
+      throw new ValidationError(`Package glob "${group.glob}" did not match any directories under ${root}.`);
+    }
+    for (const relativePath of matches) {
+      const directory = path4.join(root, relativePath);
+      const name = await packageName(directory, relativePath, group.idFrom ?? "path");
+      if (packages.some((pkg) => pkg.name === name)) {
+        throw new ValidationError(`Package identifier "${name}" is configured more than once.`);
+      }
+      packages.push({
+        name,
+        directory,
+        path: relativePath,
+        type: packageType(group),
+        group
+      });
+    }
+  }
+  return packages;
+}
+function assertKnownPackages(packages, names) {
+  names.forEach((name) => {
+    if (!packages.some((pkg) => pkg.name === name)) {
+      throw new ValidationError(`Unknown package "${name}".`);
+    }
+  });
+}
+function findPackage(packages, identifier) {
+  const packagePath = identifier.replaceAll("\\", "/").replace(/^\.\//, "").replace(/\/+$/, "");
+  return packages.find((pkg) => pkg.name === identifier) ?? packages.find((pkg) => pkg.path === packagePath);
+}
+function resolvePackageNames(packages, identifiers) {
+  return identifiers.map((identifier) => {
+    const pkg = findPackage(packages, identifier);
+    if (!pkg) {
+      throw new ValidationError(`Unknown package "${identifier}".`);
+    }
+    return pkg.name;
+  });
+}
+async function getChangedPackages(repository, packages, since, uncommitted = false) {
+  const changedFiles = await repository.getChangedFiles(since, {
+    uncommitted
+  });
+  const filesByPackage = {};
+  const changed = packages.filter((pkg) => {
+    const packageFromRepo = repository.relativePath(pkg.directory);
+    const matchingFiles = "" === packageFromRepo ? changedFiles : changedFiles.filter((file) => file === packageFromRepo || file.startsWith(`${packageFromRepo}/`));
+    if (matchingFiles.length) {
+      filesByPackage[pkg.name] = matchingFiles;
+    }
+    return matchingFiles.length > 0;
+  });
+  return { packages: changed, filesByPackage };
+}
+function toChangesetPackage(pkg) {
+  return {
+    name: pkg.name,
+    directory: pkg.directory,
+    path: pkg.path,
+    type: pkg.type,
+    currentVersion: pkg.currentVersion
+  };
+}
+function globRegExp(glob) {
+  const escaped = glob.split("/").map((part) => {
+    if ("**" === part) {
+      return ".*";
+    }
+    return part.replaceAll(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", "[^/]*").replaceAll("?", "[^/]");
+  }).join("/");
+  return new RegExp(`^${escaped}$`);
+}
+async function findDirectories(root, prefix = "", maxDepth = 5) {
+  let entries;
+  try {
+    entries = await readdir4(path4.join(root, prefix), {
+      withFileTypes: true
+    });
+  } catch (error) {
+    if ("ENOENT" === error.code) {
+      return [];
+    }
+    throw error;
+  }
+  const directories = entries.filter((item) => item.isDirectory() && !SKIPPED_DIRECTORIES.includes(item.name));
+  if (prefix.split(path4.sep).filter(Boolean).length >= maxDepth) {
+    return directories.map((item) => path4.join(prefix, item.name));
+  }
+  const children = await Promise.all(directories.map((item) => findDirectories(root, path4.join(prefix, item.name), maxDepth)));
+  return [
+    ...directories.map((item) => path4.join(prefix, item.name)),
+    ...children.flat()
+  ];
+}
+async function packageName(directory, relativePath, idFrom) {
+  if ("path" === idFrom) {
+    if ("." === relativePath) {
+      return path4.basename(directory);
+    }
+    return relativePath.split(path4.sep).join("/");
+  }
+  const [file, field] = idFrom.split("#");
+  if (!file || !field) {
+    throw new ValidationError(`Invalid package identifier source "${idFrom}".`);
+  }
+  const manifest = await readJson(path4.join(directory, file));
+  const name = manifest[field];
+  if ("string" !== typeof name || !name.trim()) {
+    throw new ValidationError(`Expected ${file}#${field} in ${directory}.`);
+  }
+  return name;
+}
+function packageType(group) {
+  const kind = group.version?.from.kind;
+  if ("wordpress-plugin-header" === kind) {
+    return "plugin";
+  }
+  if ("wordpress-theme-header" === kind) {
+    return "theme";
+  }
+  if ("package-json" === kind) {
+    return "npm";
+  }
+  return "other";
+}
+
+// ../../js/wp-release/dist/release-repository.js
+import path5 from "node:path";
+var ReleaseRepository = class {
+  cwd;
+  runner;
+  /**
+   * @param options Repository root and git runner.
+   */
+  constructor(options2) {
+    this.cwd = path5.resolve(options2.cwd);
+    this.runner = options2.runner ?? createGitRunner();
+  }
+  /**
+   * Run a git command in the repository. The repository is marked as a safe
+   * directory, because CI containers often check it out as another user.
+   *
+   * @param  args Arguments after "git".
+   * @return Standard output.
+   * @throws {ValidationError} If the command fails.
+   */
+  async run(args) {
+    try {
+      const { stdout } = await this.runner({
+        args: ["-c", `safe.directory=${this.cwd}`, ...args],
+        cwd: this.cwd
+      });
+      return stdout;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new ValidationError(`Git command failed (${args.join(" ")}): ${message}`);
+    }
+  }
+  /**
+   * Get the path of a file relative to the repository root, with forward
+   * slashes as git expects.
+   *
+   * @param file Absolute or relative file path.
+   * @return Relative path, empty for the root itself.
+   */
+  relativePath(file) {
+    return path5.relative(this.cwd, file).split(path5.sep).join("/");
+  }
+  /**
+   * Check whether a tag exists.
+   *
+   * @param tag Tag name.
+   * @return Whether the tag exists.
+   */
+  async tagExists(tag) {
+    const output = await this.run(["tag", "--list", tag]);
+    return output.trim() === tag;
+  }
+  /**
+   * List the tags that start with a prefix.
+   *
+   * @param prefix Tag prefix, like `plugins/alpha/`.
+   * @return Tag names.
+   */
+  async listTags(prefix) {
+    const output = await this.run(["tag", "--list", `${prefix}*`]);
+    return output.trim().split(/\r?\n/).filter(Boolean);
+  }
+  /**
+   * Tag the current commit.
+   *
+   * @param tag Tag name.
+   */
+  async createTag(tag) {
+    await this.run(["tag", tag]);
+  }
+  /**
+   * Push a tag to the origin remote.
+   *
+   * @param tag Tag name.
+   */
+  async pushTag(tag) {
+    await this.run(["push", "origin", tag]);
+  }
+  /**
+   * Find the commit that added a file.
+   *
+   * @param file File path.
+   * @return Commit, or undefined when the file isn't committed.
+   */
+  async getAddedCommit(file) {
+    const [commit] = await this.getCommits([
+      "--diff-filter=A",
+      "-1",
+      "--",
+      this.relativePath(file)
+    ]);
+    return commit;
+  }
+  /**
+   * List the commits of a revision range that changed a directory.
+   *
+   * @param revision  Revision range, like `plugins/alpha/1.0.0..HEAD`.
+   * @param directory Directory the commits changed.
+   * @return Commits, newest first.
+   */
+  async getDirectoryCommits(revision, directory) {
+    return this.getCommits([
+      revision,
+      "--",
+      this.relativePath(directory) || "."
+    ]);
+  }
+  /**
+   * List the files changed between the merge base of a ref and HEAD, or the
+   * working tree with the uncommitted option, which adds untracked files.
+   *
+   * @param since   Base ref, like origin/main.
+   * @param options Directory, diff filter and uncommitted files.
+   * @return Changed files relative to the repository root.
+   */
+  async getChangedFiles(since, options2 = {}) {
+    const pathspec = options2.directory ? ["--", this.relativePath(options2.directory)] : [];
+    const range = options2.uncommitted ? (await this.run(["merge-base", since, "HEAD"])).trim() : `${since}...HEAD`;
+    const output = await this.run([
+      "diff",
+      "--name-only",
+      ...options2.diffFilter ? [`--diff-filter=${options2.diffFilter}`] : [],
+      range,
+      ...pathspec
+    ]);
+    const untracked = options2.uncommitted ? await this.run([
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+      "--full-name",
+      ...pathspec
+    ]) : "";
+    const files = `${output}
+${untracked}`.split(/\r?\n/).filter(Boolean);
+    return [...new Set(files)];
+  }
+  /**
+   * Read a file as of the merge base of a ref and HEAD, the side that
+   * getChangedFiles() diffs against.
+   *
+   * @param since Base ref, like origin/main.
+   * @param file  Absolute or relative file path.
+   * @return File contents, or undefined when the file doesn't exist there.
+   */
+  async readFileAtMergeBase(since, file) {
+    const base = (await this.run(["merge-base", since, "HEAD"])).trim();
+    const relative4 = this.relativePath(file);
+    const listed = await this.run([
+      "ls-tree",
+      "--name-only",
+      base,
+      "--",
+      relative4
+    ]);
+    return "" === listed.trim() ? void 0 : this.run(["show", `${base}:${relative4}`]);
+  }
+  /**
+   * Run git log and parse the commits.
+   *
+   * @param args Arguments after the format option.
+   * @return Commits, newest first.
+   */
+  async getCommits(args) {
+    const output = await this.run([
+      "log",
+      "--format=%H%x1f%h%x1f%s",
+      ...args
+    ]);
+    return output.trim().split(/\r?\n/).filter(Boolean).map((line) => {
+      const [hash = "", shortHash = "", subject = ""] = line.split("");
+      return { hash, shortHash, subject };
+    });
+  }
+};
+
+// ../../js/wp-release/dist/package-deploy.js
+async function getGitDeploys(options2) {
+  const { config, releases, root } = await loadDeployContext(options2);
+  const deploys = await Promise.all(releases.map(async (release) => {
+    const targets = toTargetList(release.package.group.deploy?.git);
+    const resolved = await Promise.all(targets.filter((target) => isGitTargetReleased(target, release)).map((target) => getGitDeploy(target, release, config, root, options2)));
+    return resolved.filter((deploy) => void 0 !== deploy);
+  }));
+  return deploys.flat();
+}
+async function getSvnDeploys(options2) {
+  const { config, releases } = await loadDeployContext(options2);
+  const deploys = await Promise.all(releases.filter((release) => release.version).map(async (release) => {
+    const targets = toTargetList(release.package.group.deploy?.svn);
+    const resolved = await Promise.all(targets.map((target) => getSvnDeploy(target, release, config, options2)));
+    return resolved.filter((deploy) => void 0 !== deploy);
+  }));
+  return deploys.flat();
+}
+async function requireConfig(options2) {
+  const loaded = await loadChangesetConfig({
+    cwd: options2.cwd,
+    ...options2.configFile ? { configFile: options2.configFile } : {}
+  });
+  if (!loaded) {
+    throw new ValidationError("No wp-release config found. Add wp-release.config.js or pass --config <path>.");
+  }
+  return loaded.config;
+}
+async function loadDeployContext(options2) {
+  const config = await requireConfig(options2);
+  const repository = new ReleaseRepository({
+    cwd: options2.cwd,
+    runner: options2.git
+  });
+  const packages = selectPackages(await discoverDeployPackages(repository, config), options2.packages ?? []);
+  const root = await repository.run(["rev-parse", "--show-toplevel"]);
+  const revision = await repository.run(["rev-parse", "HEAD^{commit}"]);
+  return {
+    config,
+    releases: getReleases(packages, config, options2.ref).map((release) => ({ ...release, revision: revision.trim() })),
+    root: root.trim()
+  };
+}
+function selectPackages(packages, identifiers) {
+  const selected = identifiers.map((identifier) => {
+    const pkg = findPackage(packages, identifier);
+    if (!pkg) {
+      throw new ValidationError(`Unknown package "${identifier}", or it has no deploy targets.`);
+    }
+    return pkg;
+  });
+  return identifiers.length ? packages.filter((pkg) => selected.includes(pkg)) : packages;
+}
+function getReleases(packages, config, ref) {
+  const tagFormat = config.tagFormat ?? "{path}/{version}";
+  const tag = ref.startsWith("refs/tags/") ? ref.slice("refs/tags/".length) : ref;
+  const tagged = ref.startsWith("refs/heads/") ? [] : packages.flatMap((pkg) => getTaggedVersion(pkg, tagFormat, tag));
+  const branch = ref.replace(/^refs\/heads\//, "");
+  return ref.startsWith("refs/tags/") || tagged.length ? tagged : packages.map((pkg) => ({ package: pkg, branch }));
+}
+function getTaggedVersion(pkg, tagFormat, tag) {
+  const prefix = formatTag(tagFormat, pkg, "");
+  const version = tag.startsWith(prefix) ? tag.slice(prefix.length) : "";
+  return pkg.group.version && isVersion(version) ? [{ package: pkg, version }] : [];
+}
+function isGitTargetReleased(target, release) {
+  const branches = target.branches ?? true;
+  const branchReleased = Array.isArray(branches) ? branches.includes(release.branch ?? "") : branches;
+  return release.version ? false !== target.tag : branchReleased;
+}
+async function getGitDeploy(target, release, config, root, options2) {
+  const pkg = release.package;
+  const tag = release.version ? formatTag(target.tag || "{version}", pkg, release.version) : void 0;
+  const ref = tag ?? release.branch ?? "";
+  const repository = await resolveTemplate(target.repository, release, ref);
+  const message = target.message ? await resolveTemplate(target.message, release, ref) : "";
+  const splitPrefix = false === target.history ? "" : path6.relative(root, await realpath2(pkg.directory)).split(path6.sep).join("/");
+  return repository ? {
+    package: toDeployPackage(pkg),
+    release: toRelease(release),
+    target: redactUrls(repository),
+    targetRef: ref,
+    label: `${pkg.name} to ${redactUrls(repository)} ${ref}`,
+    input: {
+      cwd: options2.cwd,
+      sourceDir: pkg.directory,
+      gitUrl: repository,
+      ...release.branch ? { branch: release.branch } : {},
+      ...tag ? { tag } : {},
+      ...splitPrefix ? { splitPrefix } : {},
+      ...message ? { message } : {},
+      ...getFileSelection(pkg, config),
+      dryRun: Boolean(options2.dryRun)
+    }
+  } : void 0;
+}
+async function getSvnDeploy(target, release, config, options2) {
+  const pkg = release.package;
+  const version = release.version ?? "";
+  const stable = !isPrerelease2(version);
+  const slug = await resolveTemplate(target.slug ?? "{slug}", release, version);
+  const message = target.message ? await resolveTemplate(target.message, release, version) : "";
+  return slug ? {
+    package: toDeployPackage(pkg),
+    release: toRelease(release),
+    target: `WordPress.org ${slug}`,
+    targetRef: version,
+    label: `${pkg.name} to WordPress.org ${slug} ${version}`,
+    input: {
+      cwd: options2.cwd,
+      sourceDir: pkg.directory,
+      slug,
+      version,
+      svnTag: version,
+      trunk: stable,
+      ...stable && target.assetsDir ? {
+        assetsDir: path6.join(pkg.directory, target.assetsDir)
+      } : {},
+      ...target.readme ? { readme: target.readme } : {},
+      ...target.url ? { svnUrl: target.url } : {},
+      ...message ? { message } : {},
+      ...getFileSelection(pkg, config),
+      dryRun: Boolean(options2.dryRun)
+    }
+  } : void 0;
+}
+async function resolveTemplate(template, release, ref) {
+  const value = "function" === typeof template ? await template({
+    package: toDeployPackage(release.package),
+    ...toRelease(release),
+    ref,
+    revision: release.revision
+  }) : formatTag(template, release.package, release.version ?? "").replaceAll("{branch}", release.branch ?? "").replaceAll("{ref}", ref).replaceAll("{revision}", release.revision);
+  return value?.trim() ?? "";
+}
+function getFileSelection(pkg, config) {
+  const shared = config.files ?? {};
+  const files = pkg.group.files ?? {};
+  const setting = void 0 === files.distignore ? shared.distignore : files.distignore;
+  const distignore = "string" === typeof setting ? path6.join(pkg.directory, setting) : setting;
+  const exclude = [...shared.exclude ?? [], ...files.exclude ?? []];
+  return {
+    ...void 0 === distignore ? {} : { distignore },
+    ...exclude.length ? { exclude } : {}
+  };
+}
+function toDeployPackage(pkg) {
+  return {
+    name: pkg.name,
+    directory: pkg.directory,
+    path: pkg.path,
+    type: pkg.type
+  };
+}
+function toRelease(release) {
+  return {
+    ...release.version ? { version: release.version } : {},
+    ...release.branch ? { branch: release.branch } : {}
+  };
+}
+function getDeployPlan(deploys) {
+  const names = [
+    ...new Set(deploys.map((item) => item.package.name))
+  ];
+  return names.map((name) => {
+    const items = deploys.filter((item) => item.package.name === name);
+    return {
+      package: name,
+      ...items[0]?.release,
+      targets: items.map((item) => ({
+        target: item.target,
+        ref: item.targetRef
+      }))
+    };
+  });
+}
+
 // ../../js/wp-release/dist/svn-deploy.js
 var import_ignore4 = __toESM(require_ignore(), 1);
 import { existsSync as existsSync5 } from "node:fs";
@@ -25814,8 +26848,8 @@ var AUTH_ERROR_PATTERN = /E170001|E170013|E175013|E215004|E220003|Authentication
 function isAuthError(stderr) {
   return AUTH_ERROR_PATTERN.test(stderr);
 }
-function toSvnPath(path10) {
-  return path10.includes("@") ? `${path10}@` : path10;
+function toSvnPath(path11) {
+  return path11.includes("@") ? `${path11}@` : path11;
 }
 function createSvnRunner(binary = "svn") {
   return ({ args, cwd, input: input2 }) => new Promise((resolve11, reject) => {
@@ -25908,7 +26942,7 @@ var Svn = class {
    * @param input URL, working copy path and depth.
    */
   async checkout(input2) {
-    const { url, path: path10, depth = "immediates" } = input2;
+    const { url, path: path11, depth = "immediates" } = input2;
     await this.run({
       args: [
         "checkout",
@@ -25916,7 +26950,7 @@ var Svn = class {
         depth,
         "--",
         url,
-        toSvnPath(path10)
+        toSvnPath(path11)
       ]
     });
   }
@@ -25953,10 +26987,10 @@ var Svn = class {
    * @param path Working copy path.
    * @return Changed paths relative to the working copy.
    */
-  async status(path10) {
+  async status(path11) {
     const { stdout } = await this.run({
       args: ["status", "--no-ignore", "--ignore-externals"],
-      cwd: path10
+      cwd: path11
     });
     return parseStatus(stdout);
   }
@@ -26049,7 +27083,7 @@ var Svn = class {
 
 // ../../js/wp-release/dist/sync.js
 var import_ignore3 = __toESM(require_ignore(), 1);
-import { copyFile as copyFile2, mkdir as mkdir5, readdir as readdir4, readFile as readFile7, rm as rm4, rmdir as rmdir2, stat as stat4 } from "node:fs/promises";
+import { copyFile as copyFile2, mkdir as mkdir5, readdir as readdir5, readFile as readFile9, rm as rm4, rmdir as rmdir2, stat as stat4 } from "node:fs/promises";
 import { dirname as dirname3, join as join8 } from "node:path";
 var SVN_DIRECTORY = ".svn";
 async function isSameFile(source, target) {
@@ -26064,8 +27098,8 @@ async function isSameFile(source, target) {
     return false;
   }
   const [sourceContents, targetContents] = await Promise.all([
-    readFile7(source),
-    readFile7(target)
+    readFile9(source),
+    readFile9(target)
   ]);
   return sourceContents.equals(targetContents);
 }
@@ -26078,12 +27112,12 @@ async function copyFileIfChanged(source, target) {
   return true;
 }
 async function removeEmptyDirectories(dir, root = true) {
-  const entries = await readdir4(dir, { withFileTypes: true });
+  const entries = await readdir5(dir, { withFileTypes: true });
   const subdirs = entries.filter((entry) => entry.isDirectory() && SVN_DIRECTORY !== entry.name);
   for (const subdir of subdirs) {
     await removeEmptyDirectories(join8(dir, subdir.name), false);
   }
-  if (!root && 0 === (await readdir4(dir)).length) {
+  if (!root && 0 === (await readdir5(dir)).length) {
     await rmdir2(dir);
   }
 }
@@ -26241,9 +27275,9 @@ var SvnDeploy = class {
       path: workingCopy,
       depth: "immediates"
     });
-    for (const { path: path10, depth } of this.getCheckoutPaths()) {
-      await this.svn.update({ path: join9(workingCopy, path10), depth });
-      await this.addMissingDirectory(path10);
+    for (const { path: path11, depth } of this.getCheckoutPaths()) {
+      await this.svn.update({ path: join9(workingCopy, path11), depth });
+      await this.addMissingDirectory(path11);
     }
     if (tagPath && !this.options.force && this.hasTag()) {
       throw new ValidationError(`${tagPath} already exists in ${this.options.svnUrl}. Pass --force to replace it.`);
@@ -26261,11 +27295,11 @@ var SvnDeploy = class {
    *
    * @param path Path relative to the working copy.
    */
-  async addMissingDirectory(path10) {
+  async addMissingDirectory(path11) {
     const workingCopy = this.getWorkingCopy();
-    if (!existsSync5(join9(workingCopy, path10))) {
-      await mkdir6(join9(workingCopy, path10));
-      await this.svn.add({ paths: [path10], cwd: workingCopy });
+    if (!existsSync5(join9(workingCopy, path11))) {
+      await mkdir6(join9(workingCopy, path11));
+      await this.svn.add({ paths: [path11], cwd: workingCopy });
     }
   }
   /**
@@ -26343,7 +27377,7 @@ var SvnDeploy = class {
   async stage() {
     const workingCopy = this.getWorkingCopy();
     const status = await this.svn.status(workingCopy);
-    const pathsWith = (type) => status.filter((entry) => type === entry.status).map(({ path: path10 }) => path10);
+    const pathsWith = (type) => status.filter((entry) => type === entry.status).map(({ path: path11 }) => path11);
     await this.svn.add({
       paths: pathsWith("unversioned"),
       cwd: workingCopy
@@ -26404,7 +27438,7 @@ var SvnDeploy = class {
       this.logger.notice("No changes to commit.");
       return result;
     }
-    await this.logger.group("SVN status", () => changes.forEach(({ status, path: path10 }) => this.logger.info(`${status.padEnd(12)}${path10}`)));
+    await this.logger.group("SVN status", () => changes.forEach(({ status, path: path11 }) => this.logger.info(`${status.padEnd(12)}${path11}`)));
     if (this.options.dryRun) {
       this.logger.notice(`Dry run, skipped committing ${changes.length} changes.`);
       return result;
@@ -26477,7 +27511,7 @@ var SvnDeploy = class {
     const tagPath = this.getTagPath();
     const message = this.options.message ?? this.getDefaultMessage();
     const plan = [
-      `Check out ${svnUrl} with ${this.getCheckoutPaths().map(({ path: path10 }) => path10).join(", ")}`,
+      `Check out ${svnUrl} with ${this.getCheckoutPaths().map(({ path: path11 }) => path11).join(", ")}`,
       tagPath && !force && `Stop if ${tagPath} already exists`,
       tagPath && force && `Replace ${tagPath} if it exists`,
       trunk && `Sync ${this.describeSource()} to trunk/`,
@@ -26579,7 +27613,91 @@ var SvnDeploy = class {
   }
 };
 
+// ../../js/wp-release/dist/commands/package-deploys.js
+var packageDeployArgs = {
+  "release-ref": { type: "string" },
+  package: { type: "string", multiple: true },
+  list: { type: "boolean" }
+};
+function getPackageDeployArgs(values, positionals, targetFlags) {
+  const ref = getString(values, "release-ref")?.trim();
+  const packages = getStrings(values, "package");
+  const list = getBoolean(values, "list");
+  const conflicts = targetFlags.filter((flag) => void 0 !== getString(values, flag) || getBoolean(values, flag) || getStrings(values, flag).length);
+  if ("" === ref) {
+    throw new ValidationError("--release-ref <ref> must not be empty.");
+  }
+  if ((packages.length || list) && !ref) {
+    throw new ValidationError(`${list ? "--list" : "--package"} requires --release-ref <ref>.`);
+  }
+  if (ref && (positionals.length || conflicts.length)) {
+    throw new ValidationError(`--release-ref deploys the configured packages and targets, so it can't be combined with ${positionals.length ? "a source directory" : conflicts.map((flag) => `--${flag}`).join(", ")}.`);
+  }
+  return { ...ref ? { ref } : {}, packages, list };
+}
+async function runPackageDeploys(deploys, deploy, logger2, ref) {
+  const outcomes = [];
+  const names = [
+    ...new Set(deploys.map((item) => item.package.name))
+  ];
+  if (!deploys.length) {
+    logger2.info(`No configured package deploys ${ref}.`);
+  }
+  for (const name of names) {
+    const items = deploys.filter((item) => item.package.name === name);
+    const release = items[0]?.release ?? {};
+    await logger2.group(`${name} ${release.version ?? release.branch ?? ""}`.trim(), async () => {
+      for (const item of items) {
+        outcomes.push(await runDeploy(item, deploy, logger2));
+      }
+    });
+  }
+  return {
+    exitCode: outcomes.some((outcome) => outcome.error) ? 1 : 0,
+    result: { deploys: outcomes }
+  };
+}
+async function runDeploy(item, deploy, logger2) {
+  const outcome = {
+    package: item.package.name,
+    label: item.label,
+    ...item.release
+  };
+  try {
+    outcome.result = await deploy(item.input);
+  } catch (error) {
+    outcome.error = error instanceof Error ? error.message : String(error);
+    logError(logger2, error, `Deploy of ${item.label}`);
+  }
+  return outcome;
+}
+function listPackageDeploys(deploys, logger2, ref) {
+  if (!deploys.length) {
+    logger2.info(`No configured package deploys ${ref}.`);
+  }
+  deploys.forEach((item) => logger2.info(item.label));
+  return { exitCode: 0, result: { packages: getDeployPlan(deploys) } };
+}
+
 // ../../js/wp-release/dist/commands/deploy-svn.js
+var TARGET_FLAGS = [
+  "source-dir",
+  "trunk",
+  "readme-only",
+  "svn-tag",
+  "assets-dir",
+  "no-assets",
+  "slug",
+  "version",
+  "readme",
+  "from-zip",
+  "distignore",
+  "no-distignore",
+  "exclude",
+  "exclude-gitattributes",
+  "svn-url",
+  "message"
+];
 function getDeployInputFromArgs(input2) {
   const { values, positionals, cwd } = input2;
   const flag = (name) => getBoolean(values, name) || void 0;
@@ -26605,7 +27723,7 @@ function getDeployInputFromArgs(input2) {
 }
 var deploy_svn_default = {
   name: "deploy-svn",
-  usage: "deploy-svn [<source-dir>] [options]",
+  usage: "deploy-svn [<source-dir>] [options] | deploy-svn --release-ref <ref> [--package <name>] [--list] [--dry-run]",
   summary: "Deploy a plugin to the WordPress.org plugin SVN repository.",
   help: `Arguments:
   <source-dir>            Directory with the plugin files (default: .), also
@@ -26620,6 +27738,15 @@ Writes (none by default, assets only with --assets-dir):
   --assets-dir <dir>      Sync this directory with banners, icons and
                           screenshots to assets/
   --no-assets             Don't sync --assets-dir for this run
+
+Configured packages (instead of the writes and the source options):
+  --release-ref <ref>     Deploy the package that this release tag releases,
+                          like refs/tags/plugins/alpha/1.2.0, to the SVN
+                          targets in the config. Branches aren't deployed.
+  --package <name>        Deploy only this package (repeatable)
+  --list                  List the deploys without running them, with the
+                          deploys of each package as the result for --json
+                          and --github-output, for a CI matrix
 
 Options:
   --slug <slug>           Plugin slug (default: project directory name)
@@ -26641,7 +27768,13 @@ Options:
 Credentials are only needed to commit. Exits with 3 when they're missing
 or rejected.
 
+With --release-ref, a stable release syncs trunk/, creates its tag and syncs
+the assetsDir of each deploy.svn target, while a pre-release only creates its
+tag. A failed deploy doesn't stop the others and exits with 1.
+
 Examples:
+  wp-release deploy-svn --release-ref "$GITHUB_REF"
+      Deploy the configured plugin of a release tag push
   wp-release deploy-svn dist --trunk --svn-tag 1.2.0 --assets-dir .wordpress-org
       Deploy 1.2.0 to trunk and the tag, and update the assets
   wp-release deploy-svn dist --svn-tag 1.2.0-rc.1
@@ -26666,9 +27799,25 @@ Examples:
     "svn-username": { type: "string" },
     message: { type: "string" },
     force: { type: "boolean" },
+    ...packageDeployArgs,
     "dry-run": { type: "boolean" }
   },
-  async run({ values, positionals, cwd, logger: logger2 }) {
+  async run({ values, positionals, cwd, configFile, logger: logger2 }) {
+    const { ref, packages, list } = getPackageDeployArgs(values, positionals, TARGET_FLAGS);
+    if (ref) {
+      const deploys = await getSvnDeploys({
+        cwd,
+        ref,
+        packages,
+        dryRun: getBoolean(values, "dry-run"),
+        ...configFile ? { configFile } : {}
+      });
+      return list ? listPackageDeploys(deploys, logger2, ref) : runPackageDeploys(deploys, (input2) => new SvnDeploy(resolveDeployOptions({
+        ...input2,
+        svnUsername: getString(values, "svn-username"),
+        force: getBoolean(values, "force")
+      }), logger2).run(), logger2, ref);
+    }
     const options2 = resolveDeployOptions(getDeployInputFromArgs({ values, positionals, cwd }));
     const result = await new SvnDeploy(options2, logger2).run();
     return { exitCode: 0, result };
@@ -26681,6 +27830,27 @@ import { tmpdir as tmpdir3 } from "node:os";
 import { join as join10, resolve as resolve10 } from "node:path";
 function isValidRefName(name) {
   return /^[^\s~^:?*[\\]+$/.test(name) && !/(^[-/.]|\/\.|\.\.|\/\/|@\{|\.lock$|[/.]$)/.test(name);
+}
+function getDefaultToken(gitUrl, env = process.env) {
+  const url = URL.canParse(gitUrl) ? new URL(gitUrl) : void 0;
+  const hosts = [
+    "github.com",
+    URL.canParse(env.GITHUB_SERVER_URL ?? "") ? new URL(env.GITHUB_SERVER_URL ?? "").host : ""
+  ];
+  const isGitHub = "https:" === url?.protocol && !url.username && hosts.includes(url.host);
+  return isGitHub ? env.GITHUB_TOKEN || void 0 : void 0;
+}
+function getGitAuthEnv(gitUrl, token, env = process.env) {
+  const count = Number(env.GIT_CONFIG_COUNT) || 0;
+  const key = token ? `http.${new URL(gitUrl).origin}/.extraheader` : "";
+  const credentials = Buffer.from(`x-access-token:${token}`).toString("base64");
+  return token ? {
+    GIT_CONFIG_COUNT: String(count + 2),
+    [`GIT_CONFIG_KEY_${count}`]: key,
+    [`GIT_CONFIG_VALUE_${count}`]: "",
+    [`GIT_CONFIG_KEY_${count + 1}`]: key,
+    [`GIT_CONFIG_VALUE_${count + 1}`]: `AUTHORIZATION: basic ${credentials}`
+  } : {};
 }
 function resolveGitDeployOptions(input2 = {}) {
   const cwd = resolve10(input2.cwd ?? process.cwd());
@@ -26704,6 +27874,7 @@ function resolveGitDeployOptions(input2 = {}) {
     splitPrefix: input2.splitPrefix || null,
     sourceRef: input2.sourceRef || "HEAD",
     message: input2.message || null,
+    token: input2.token || getDefaultToken(input2.gitUrl) || null,
     dryRun: Boolean(input2.dryRun),
     ...resolveFileSelection({
       cwd,
@@ -27023,12 +28194,32 @@ var GitDeploy = class {
   async git(input2) {
     const cwd = await this.getRepoRoot();
     this.logger.debug(redactUrls(`git ${input2.args.join(" ")}`));
-    const { stdout } = await this.runner({ ...input2, cwd });
+    const { stdout } = await this.runner({
+      ...input2,
+      cwd,
+      env: {
+        ...getGitAuthEnv(this.options.gitUrl, this.options.token),
+        ...input2.env
+      }
+    });
     return stdout.trim();
   }
 };
 
 // ../../js/wp-release/dist/commands/deploy-git.js
+var TARGET_FLAGS2 = [
+  "source-dir",
+  "git-url",
+  "branch",
+  "tag",
+  "split-prefix",
+  "source-ref",
+  "distignore",
+  "no-distignore",
+  "exclude",
+  "exclude-gitattributes",
+  "message"
+];
 function getGitDeployInputFromArgs(values, positionals, cwd) {
   return {
     cwd,
@@ -27045,7 +28236,7 @@ function getGitDeployInputFromArgs(values, positionals, cwd) {
 }
 var deploy_git_default = {
   name: "deploy-git",
-  usage: "deploy-git [<source-dir>] --git-url <url> [options]",
+  usage: "deploy-git [<source-dir>] --git-url <url> [options] | deploy-git --release-ref <ref> [--package <name>] [--list] [--dry-run]",
   summary: "Deploy the files of a plugin, theme or package to a Git repository as a release commit.",
   help: `Arguments:
   <source-dir>            Directory with the files to release (default: .),
@@ -27056,6 +28247,17 @@ Writes (none by default):
                           previous release
   --tag <name>            Create this tag for the release, on top of --branch
                           or the default branch of the repository
+
+Configured packages (instead of the options above):
+  --release-ref <ref>     Deploy the packages that this ref releases to the Git
+                          targets in the config: the package of a release tag,
+                          like refs/tags/plugins/alpha/1.2.0, or every package
+                          for a branch, like refs/heads/main
+  --package <name>        Deploy only this package (repeatable), for example
+                          in a CI job for each package or to retry one
+  --list                  List the deploys without running them, with the
+                          deploys of each package as the result for --json
+                          and --github-output, for a CI matrix
 
 Options:
   --git-url <url>         Repository to deploy to
@@ -27076,9 +28278,21 @@ branch only moves forward, a release without changes isn't pushed again, an
 older build doesn't move a branch that has newer source history, a tag that
 already has the same files is reused, and a tag with other files
 fails with exit code 2 (delete it in the repository to release it again). The source directory must be inside a Git repository.
-Credentials come from git, like a token in the URL or an SSH key.
+Credentials come from git, like a credential helper or an SSH key. For an
+HTTPS repository on github.com, or on the host of GITHUB_SERVER_URL, the
+GITHUB_TOKEN environment variable is sent as an authorization header, so the
+token stays out of the URL.
+
+With --release-ref, each package deploys to every Git target of its
+deploy.git config, with the history of its directory, in one log group for
+each package, and a failed deploy doesn't stop the others but exits with 1. A release tag creates the tag of each target on top
+of its default branch, and a branch releases to the same branch.
 
 Examples:
+  wp-release deploy-git --release-ref "$GITHUB_REF"
+      Deploy the configured packages of a tag or branch push
+  wp-release deploy-git --release-ref refs/heads/main --list
+      Preview what a push to main deploys
   wp-release deploy-git build --git-url git@github.com:me/my-plugin-dist.git --branch main --tag 1.2.0
       Release a build to a distribution repository and tag it
   wp-release deploy-git packages/my-plugin --split-prefix packages/my-plugin --git-url \u2026 --branch main
@@ -27092,9 +28306,21 @@ Examples:
     "source-ref": { type: "string" },
     ...fileSelectionArgs,
     message: { type: "string" },
+    ...packageDeployArgs,
     "dry-run": { type: "boolean" }
   },
-  async run({ values, positionals, cwd, logger: logger2 }) {
+  async run({ values, positionals, cwd, configFile, logger: logger2 }) {
+    const { ref, packages, list } = getPackageDeployArgs(values, positionals, TARGET_FLAGS2);
+    if (ref) {
+      const deploys = await getGitDeploys({
+        cwd,
+        ref,
+        packages,
+        dryRun: getBoolean(values, "dry-run"),
+        ...configFile ? { configFile } : {}
+      });
+      return list ? listPackageDeploys(deploys, logger2, ref) : runPackageDeploys(deploys, (input2) => new GitDeploy(resolveGitDeployOptions(input2), logger2).run(), logger2, ref);
+    }
     const options2 = resolveGitDeployOptions(getGitDeployInputFromArgs(values, positionals, cwd));
     const result = await new GitDeploy(options2, logger2).run();
     return { exitCode: 0, result };
@@ -27170,418 +28396,6 @@ var GitHubActionsWriter = class {
     return file ? getWorkspacePath(this.workspace, file) : null;
   }
 };
-
-// ../../js/wp-release/dist/changeset-packages.js
-import { readdir as readdir5 } from "node:fs/promises";
-import path3 from "node:path";
-
-// ../../js/wp-release/dist/json-files.js
-import { readFile as readFile8 } from "node:fs/promises";
-async function readJson(file) {
-  try {
-    return JSON.parse(await readFile8(file, "utf8"));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new ValidationError(`Could not read JSON manifest ${file}: ${message}`);
-  }
-}
-async function readJsonIfExists(file) {
-  try {
-    return JSON.parse(await readFile8(file, "utf8"));
-  } catch (error) {
-    if ("ENOENT" !== error.code) {
-      throw error;
-    }
-    return void 0;
-  }
-}
-
-// ../../js/wp-release/dist/version-files.js
-import { access as access2, readFile as readFile9, writeFile as writeFile4 } from "node:fs/promises";
-import path2 from "node:path";
-
-// ../../js/wp-release/dist/tag-format.js
-import path from "node:path";
-function formatTag(format, pkg, version) {
-  const type = pkg.group.tagType ?? defaultTagType(pkg.path, pkg.type);
-  return format.replaceAll("{name}", pkg.name).replaceAll("{slug}", "." === pkg.path ? path.basename(pkg.directory) : path.basename(pkg.path)).replaceAll("{path}", pkg.path).replaceAll("{type}", type).replaceAll("{version}", version);
-}
-function formatTemplatePrefix(pattern, packagePath, tagType) {
-  return pattern.replaceAll("{path}", packagePath).replaceAll("{type}", tagType ?? defaultTagType(packagePath)).replaceAll("{name}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{slug}", packagePath.split("/").at(-1) ?? packagePath).replaceAll("{version}", "");
-}
-function defaultTagType(packagePath, type) {
-  if ("." === packagePath && type) {
-    return type;
-  }
-  const first = packagePath.split("/")[0] ?? "package";
-  const irregular = {
-    actions: "action",
-    plugins: "plugin",
-    themes: "theme",
-    php: "php",
-    js: "js"
-  };
-  return irregular[first] ?? first.replace(/s$/, "");
-}
-
-// ../../js/wp-release/dist/versions.js
-var VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/;
-var PRERELEASE_INPUT_PATTERN = /^([A-Za-z][0-9A-Za-z-]*)(?:\.(0|[1-9]\d*))?$/;
-var SNAPSHOT_ID_PATTERN = /^[A-Za-z][0-9A-Za-z-]*(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*$/;
-function isVersion(version) {
-  return VERSION_PATTERN.test(version);
-}
-function isPrerelease2(version) {
-  return Boolean(VERSION_PATTERN.exec(version)?.[4]);
-}
-function compareVersions(left, right) {
-  const [leftCore = "", leftPre] = splitPrerelease(left);
-  const [rightCore = "", rightPre] = splitPrerelease(right);
-  const a = leftCore.split(".").map(Number);
-  const b = rightCore.split(".").map(Number);
-  const core = (a[0] ?? 0) - (b[0] ?? 0) || (a[1] ?? 0) - (b[1] ?? 0) || (a[2] ?? 0) - (b[2] ?? 0);
-  if (core || leftPre === rightPre) {
-    return core;
-  }
-  if (void 0 === leftPre || void 0 === rightPre) {
-    return void 0 === leftPre ? 1 : -1;
-  }
-  return comparePrerelease(leftPre.split("."), rightPre.split("."));
-}
-function splitPrerelease(version) {
-  const index = version.indexOf("-");
-  return -1 === index ? [version] : [version.slice(0, index), version.slice(index + 1)];
-}
-function comparePrerelease(left, right) {
-  const [a, ...leftRest] = left;
-  const [b, ...rightRest] = right;
-  if (void 0 === a || void 0 === b) {
-    return (void 0 === a ? 0 : 1) - (void 0 === b ? 0 : 1);
-  }
-  const order = compareIdentifier(a, b);
-  return order || comparePrerelease(leftRest, rightRest);
-}
-function compareIdentifier(a, b) {
-  const aNumeric = /^\d+$/.test(a);
-  const bNumeric = /^\d+$/.test(b);
-  if (aNumeric && bNumeric) {
-    return Number(a) - Number(b);
-  }
-  if (aNumeric || bNumeric) {
-    return aNumeric ? -1 : 1;
-  }
-  return Number(a > b) - Number(a < b);
-}
-function getPrereleaseVersion(stable, prerelease, existing) {
-  const match = PRERELEASE_INPUT_PATTERN.exec(prerelease);
-  if (!match) {
-    throw new ValidationError(`Invalid pre-release "${prerelease}"; expected an identifier with an optional number, like rc or rc.1.`);
-  }
-  if (!isVersion(stable) || isPrerelease2(stable)) {
-    throw new ValidationError(`Cannot release "${stable}" as a pre-release: expected a stable x.y.z version.`);
-  }
-  const identifier = match[1] ?? "";
-  const version = match[2] ? `${stable}-${prerelease}` : `${stable}-${identifier}.${getNextPrereleaseNumber(`${stable}-${identifier}.`, existing)}`;
-  if (existing.includes(version)) {
-    throw new ValidationError(`Version ${version} already exists; pass a pre-release without a number to release the next one.`);
-  }
-  return version;
-}
-function getNextPrereleaseNumber(prefix, existing) {
-  const numbers = existing.filter((version) => version.startsWith(prefix)).map((version) => version.slice(prefix.length)).filter((number) => /^\d+$/.test(number)).map(Number);
-  return Math.max(0, ...numbers) + 1;
-}
-function getSnapshotVersion(stable, id, time) {
-  if (!SNAPSHOT_ID_PATTERN.test(id)) {
-    throw new ValidationError(`Invalid snapshot "${id}"; expected SemVer pre-release identifiers that start with a letter, like pr-251.`);
-  }
-  if (!isVersion(stable) || isPrerelease2(stable)) {
-    throw new ValidationError(`Cannot release "${stable}" as a snapshot: expected a stable x.y.z version.`);
-  }
-  const timestamp = time.toISOString().replace(/\D/g, "").slice(0, 14);
-  return `${stable}-${id}.${timestamp}`;
-}
-
-// ../../js/wp-release/dist/version-files.js
-async function readVersion(repository, directory, descriptor, relativePath, tagType) {
-  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
-    const manifest = await readJson(path2.join(directory, descriptor.file));
-    const version = manifest[descriptor.field];
-    if ("string" === typeof version && version.trim()) {
-      return version;
-    }
-    throw new ValidationError(`Missing ${descriptor.file}#${descriptor.field} in ${directory}.`);
-  }
-  if ("git-tag" === descriptor.kind) {
-    const pattern = descriptor.pattern ?? "{path}/{version}";
-    const tags = await repository.listTags(formatTemplatePrefix(pattern, relativePath, tagType));
-    const versions = tags.map((tag) => tag.match(/(?:^|\/|v)(\d+\.\d+\.\d+)$/)?.[1]).filter((item) => Boolean(item));
-    versions.sort((a, b) => compareVersions(b, a));
-    if (versions[0]) {
-      return versions[0];
-    }
-    throw new ValidationError(`No git tag matches ${pattern} for ${relativePath}.`);
-  }
-  if ("php-constant" === descriptor.kind) {
-    const file2 = path2.join(directory, descriptor.file);
-    const contents2 = await readFile9(file2, "utf8");
-    const versions = findConstantValues(contents2, descriptor.constant);
-    if (versions[0]) {
-      return versions[0];
-    }
-    throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
-  }
-  const file = path2.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile9(file, "utf8");
-  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
-  const match = new RegExp(`^\\s*\\*?\\s*${label}:\\s*([^\\r\\n]+)`, "im").exec(contents);
-  if (!match) {
-    throw new ValidationError(`Missing ${label} header in ${file}.`);
-  }
-  return match[1]?.trim() ?? "";
-}
-async function writeVersion(directory, descriptor, version, journal) {
-  if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
-    const file2 = path2.join(directory, descriptor.file);
-    const contents2 = await readFile9(file2, "utf8");
-    const manifest = JSON.parse(contents2);
-    if ("composer-json" === descriptor.kind && descriptor.ifPresent && !Object.hasOwn(manifest, descriptor.field)) {
-      return;
-    }
-    manifest[descriptor.field] = version;
-    await journal.remember(file2);
-    await writeFile4(file2, `${JSON.stringify(manifest, null, "	")}
-`);
-    return;
-  }
-  if ("php-constant" === descriptor.kind) {
-    const file2 = path2.join(directory, descriptor.file);
-    const contents2 = await readFile9(file2, "utf8");
-    const constant = escapeRegExp(descriptor.constant);
-    const definePattern = new RegExp(`(\\bdefine\\s*\\(\\s*(['"])${constant}\\2\\s*,\\s*)(['"])(.*?)\\3`, "g");
-    const declarationPattern = new RegExp(`(\\bconst\\s+${constant}\\s*=\\s*)(['"])(.*?)\\2`, "g");
-    const updated = contents2.replace(definePattern, (_match, prefix, _nameQuote, quote) => `${prefix}${quote}${version}${quote}`).replace(declarationPattern, (_match, prefix, quote) => `${prefix}${quote}${version}${quote}`);
-    if (updated === contents2) {
-      throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
-    }
-    await journal.remember(file2);
-    await writeFile4(file2, updated);
-    return;
-  }
-  if ("wordpress-stable-tag" === descriptor.kind && (isPrerelease2(version) || descriptor.ifPresent && !await versionFileExists(directory, descriptor.kind, descriptor.file))) {
-    return;
-  }
-  const file = path2.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile9(file, "utf8");
-  const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
-  const expression = new RegExp(`(^\\s*\\*?\\s*${label}:\\s*)[^\\r\\n]+`, "im");
-  if (!expression.test(contents)) {
-    throw new ValidationError(`Missing ${label} header in ${file}.`);
-  }
-  await journal.remember(file);
-  await writeFile4(file, contents.replace(expression, `$1${version}`));
-}
-async function verifyVersionTargets(repository, pkg, expected) {
-  for (const target of pkg.versionConfig.to) {
-    let actual;
-    if ("composer-json" === target.kind && target.ifPresent && !Object.hasOwn(await readJson(path2.join(pkg.directory, target.file)), target.field)) {
-      actual = void 0;
-    } else if ("wordpress-stable-tag" === target.kind && (isPrerelease2(expected) || target.ifPresent && !await versionFileExists(pkg.directory, target.kind, target.file))) {
-      actual = void 0;
-    } else {
-      actual = await readVersion(repository, pkg.directory, target, pkg.path, pkg.group.tagType);
-    }
-    if (void 0 !== actual && actual !== expected) {
-      throw new ValidationError(`Version mismatch for ${pkg.name}: expected ${expected}, found ${actual}.`);
-    }
-  }
-}
-async function getVersionFile(directory, kind, configuredFile) {
-  if (configuredFile) {
-    return configuredFile;
-  }
-  if ("wordpress-plugin-header" === kind) {
-    const file = await findMainPluginFile({ dir: directory });
-    if (file) {
-      return file;
-    }
-    throw new ValidationError(`Could not find a plugin header file in ${directory}.`);
-  }
-  if ("wordpress-stable-tag" === kind) {
-    for (const file of ["readme.txt", "readme.md"]) {
-      try {
-        await access2(path2.join(directory, file));
-        return file;
-      } catch {
-      }
-    }
-    throw new ValidationError(`Could not find readme.txt or readme.md in ${directory}.`);
-  }
-  return "style.css";
-}
-async function versionFileExists(directory, kind, configuredFile) {
-  if (configuredFile) {
-    try {
-      await access2(path2.join(directory, configuredFile));
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  if ("wordpress-stable-tag" === kind) {
-    const files = await Promise.all(["readme.txt", "readme.md"].map(async (file) => {
-      try {
-        await access2(path2.join(directory, file));
-        return true;
-      } catch {
-        return false;
-      }
-    }));
-    return files.some(Boolean);
-  }
-  return true;
-}
-
-// ../../js/wp-release/dist/changeset-packages.js
-var SKIPPED_DIRECTORIES = [".git", "node_modules", "vendor", "dist"];
-async function discoverPackages(repository, config) {
-  const root = path3.resolve(repository.cwd, config.root ?? ".");
-  const packages = [];
-  const hasRecursiveGlob = config.packages.some((item) => item.glob.split("/").includes("**"));
-  const directories = await findDirectories(root, "", hasRecursiveGlob ? Infinity : Math.max(1, ...config.packages.map((item) => item.glob.split("/").length + 2)));
-  for (const group of config.packages) {
-    const matcher = globRegExp(group.glob);
-    const candidates = matcher.test(".") ? [".", ...directories] : directories;
-    const matches = candidates.filter((item) => matcher.test(item) && !(group.exclude ?? []).some((excluded) => globRegExp(excluded).test(item))).sort();
-    if (!matches.length) {
-      throw new ValidationError(`Package glob "${group.glob}" did not match any directories under ${root}.`);
-    }
-    for (const relativePath of matches) {
-      const directory = path3.join(root, relativePath);
-      const name = await packageName(directory, relativePath, group.idFrom ?? "path");
-      const currentVersion = await readVersion(repository, directory, group.version.from, relativePath, group.tagType);
-      if (packages.some((pkg) => pkg.name === name)) {
-        throw new ValidationError(`Package identifier "${name}" is configured more than once.`);
-      }
-      packages.push({
-        name,
-        directory,
-        path: relativePath,
-        type: packageType(group),
-        currentVersion,
-        group,
-        versionConfig: group.version
-      });
-    }
-  }
-  return packages;
-}
-function assertKnownPackages(packages, names) {
-  names.forEach((name) => {
-    if (!packages.some((pkg) => pkg.name === name)) {
-      throw new ValidationError(`Unknown package "${name}".`);
-    }
-  });
-}
-function findPackage(packages, identifier) {
-  const packagePath = identifier.replaceAll("\\", "/").replace(/^\.\//, "").replace(/\/+$/, "");
-  return packages.find((pkg) => pkg.name === identifier) ?? packages.find((pkg) => pkg.path === packagePath);
-}
-function resolvePackageNames(packages, identifiers) {
-  return identifiers.map((identifier) => {
-    const pkg = findPackage(packages, identifier);
-    if (!pkg) {
-      throw new ValidationError(`Unknown package "${identifier}".`);
-    }
-    return pkg.name;
-  });
-}
-async function getChangedPackages(repository, packages, since, uncommitted = false) {
-  const changedFiles = await repository.getChangedFiles(since, {
-    uncommitted
-  });
-  const filesByPackage = {};
-  const changed = packages.filter((pkg) => {
-    const packageFromRepo = repository.relativePath(pkg.directory);
-    const matchingFiles = "" === packageFromRepo ? changedFiles : changedFiles.filter((file) => file === packageFromRepo || file.startsWith(`${packageFromRepo}/`));
-    if (matchingFiles.length) {
-      filesByPackage[pkg.name] = matchingFiles;
-    }
-    return matchingFiles.length > 0;
-  });
-  return { packages: changed, filesByPackage };
-}
-function toChangesetPackage(pkg) {
-  return {
-    name: pkg.name,
-    directory: pkg.directory,
-    path: pkg.path,
-    type: pkg.type,
-    currentVersion: pkg.currentVersion
-  };
-}
-function globRegExp(glob) {
-  const escaped = glob.split("/").map((part) => {
-    if ("**" === part) {
-      return ".*";
-    }
-    return part.replaceAll(/[.+^${}()|[\]\\]/g, "\\$&").replaceAll("*", "[^/]*").replaceAll("?", "[^/]");
-  }).join("/");
-  return new RegExp(`^${escaped}$`);
-}
-async function findDirectories(root, prefix = "", maxDepth = 5) {
-  let entries;
-  try {
-    entries = await readdir5(path3.join(root, prefix), {
-      withFileTypes: true
-    });
-  } catch (error) {
-    if ("ENOENT" === error.code) {
-      return [];
-    }
-    throw error;
-  }
-  const directories = entries.filter((item) => item.isDirectory() && !SKIPPED_DIRECTORIES.includes(item.name));
-  if (prefix.split(path3.sep).filter(Boolean).length >= maxDepth) {
-    return directories.map((item) => path3.join(prefix, item.name));
-  }
-  const children = await Promise.all(directories.map((item) => findDirectories(root, path3.join(prefix, item.name), maxDepth)));
-  return [
-    ...directories.map((item) => path3.join(prefix, item.name)),
-    ...children.flat()
-  ];
-}
-async function packageName(directory, relativePath, idFrom) {
-  if ("path" === idFrom) {
-    if ("." === relativePath) {
-      return path3.basename(directory);
-    }
-    return relativePath.split(path3.sep).join("/");
-  }
-  const [file, field] = idFrom.split("#");
-  if (!file || !field) {
-    throw new ValidationError(`Invalid package identifier source "${idFrom}".`);
-  }
-  const manifest = await readJson(path3.join(directory, file));
-  const name = manifest[field];
-  if ("string" !== typeof name || !name.trim()) {
-    throw new ValidationError(`Expected ${file}#${field} in ${directory}.`);
-  }
-  return name;
-}
-function packageType(group) {
-  const kind = group.version.from.kind;
-  if ("wordpress-plugin-header" === kind) {
-    return "plugin";
-  }
-  if ("wordpress-theme-header" === kind) {
-    return "theme";
-  }
-  if ("package-json" === kind) {
-    return "npm";
-  }
-  return "other";
-}
 
 // ../../js/wp-release/dist/changeset-prompt.js
 import { createInterface } from "node:readline";
@@ -27848,15 +28662,15 @@ ${legend}
 };
 
 // ../../js/wp-release/dist/changeset-release.js
-import path9 from "node:path";
+import path10 from "node:path";
 
 // ../../js/wp-release/dist/changelog.js
 import { readFile as readFile10, writeFile as writeFile5 } from "node:fs/promises";
-import path4 from "node:path";
+import path7 from "node:path";
 async function getVersionedReleases(repository, config, releases, changesetDirectory) {
   const commits = /* @__PURE__ */ new Map();
   const getCommit = (changeset) => {
-    const cached = commits.get(changeset.fileName) ?? repository.getAddedCommit(path4.join(changesetDirectory, changeset.fileName));
+    const cached = commits.get(changeset.fileName) ?? repository.getAddedCommit(path7.join(changesetDirectory, changeset.fileName));
     commits.set(changeset.fileName, cached);
     return cached;
   };
@@ -27915,7 +28729,7 @@ async function prependChangelog(directory, release, date, readmeChangelog, chang
 ${release.changelog}
 
 `;
-  const changelog = path4.join(directory, "CHANGELOG.md");
+  const changelog = path7.join(directory, "CHANGELOG.md");
   let previous = "";
   try {
     previous = await readFile10(changelog, "utf8");
@@ -27946,7 +28760,7 @@ ${release.changelog}
     }
   }
   if (readmeChangelog) {
-    const readme = ["readme.txt", "readme.md"].map((name) => path4.join(directory, name));
+    const readme = ["readme.txt", "readme.md"].map((name) => path7.join(directory, name));
     let readmeUpdated = false;
     let readmeFound = false;
     let readmeMarkerFound = false;
@@ -27986,7 +28800,7 @@ ${summaries.map((item) => `* ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n")}
 async function readChangelogSection(directory, version) {
   let contents = "";
   try {
-    contents = await readFile10(path4.join(directory, "CHANGELOG.md"), "utf8");
+    contents = await readFile10(path7.join(directory, "CHANGELOG.md"), "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -28003,7 +28817,7 @@ async function readChangelogSection(directory, version) {
 }
 async function getLatestChangelogVersion(directory, fallback) {
   try {
-    const contents = await readFile10(path4.join(directory, "CHANGELOG.md"), "utf8");
+    const contents = await readFile10(path7.join(directory, "CHANGELOG.md"), "utf8");
     const match = /^##\s+(\d+\.\d+\.\d+)(?:\s|$)/m.exec(contents);
     return match?.[1] ?? fallback;
   } catch (error) {
@@ -28024,187 +28838,11 @@ function insertAfterMarker(contents, marker, section, file) {
   return `${contents.slice(0, markerEnd)}${lineEnding}${lineEnding}${section.replaceAll("\n", lineEnding)}${after}`;
 }
 
-// ../../js/wp-release/dist/changeset-config.js
-import { access as access3 } from "node:fs/promises";
-import path5 from "node:path";
-import { pathToFileURL } from "node:url";
-var __rewriteRelativeImportExtension = function(path10, preserveJsx) {
-  if (typeof path10 === "string" && /^\.\.?\//.test(path10)) {
-    return path10.replace(/\.(tsx)$|((?:\.d)?)((?:\.[^./]+?)?)\.([cm]?)ts$/i, function(m, tsx, d, ext, cm) {
-      return tsx ? preserveJsx ? ".jsx" : ".js" : d && (!ext || !cm) ? m : d + ext + "." + cm.toLowerCase() + "js";
-    });
-  }
-  return path10;
-};
-var CONFIG_FILES = [
-  "wp-release.config.js",
-  "wp-release.config.mjs",
-  "wp-release.config.cjs"
-];
-async function loadChangesetConfig(input2 = {}) {
-  const cwd = path5.resolve(input2.cwd ?? process.cwd());
-  const configFile = input2.configFile ? path5.resolve(cwd, input2.configFile) : await findConfigFile(cwd);
-  if (!configFile) {
-    return void 0;
-  }
-  let loaded;
-  try {
-    loaded = await import(__rewriteRelativeImportExtension(pathToFileURL(configFile).href));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new ValidationError(`Could not load wp-release config ${configFile}: ${message}`);
-  }
-  const config = "object" === typeof loaded && null !== loaded && "default" in loaded ? loaded.default : void 0;
-  validateChangesetConfig(config, configFile);
-  return { config, file: configFile };
-}
-async function findConfigFile(cwd) {
-  for (const fileName of CONFIG_FILES) {
-    const candidate = path5.join(cwd, fileName);
-    try {
-      await access3(candidate);
-      return candidate;
-    } catch {
-    }
-  }
-  return void 0;
-}
-function validateChangesetConfig(config, configFile) {
-  if ("object" !== typeof config || null === config || Array.isArray(config)) {
-    throw new ValidationError(`wp-release config ${configFile} must default-export a configuration object.`);
-  }
-  const candidate = config;
-  if (!Array.isArray(candidate.packages)) {
-    throw new ValidationError(`wp-release config ${configFile} must define a packages array.`);
-  }
-  for (const [key, value] of Object.entries({
-    baseBranch: candidate.baseBranch,
-    changesets: candidate.changesets,
-    changelogInsertAfter: candidate.changelogInsertAfter,
-    root: candidate.root
-  })) {
-    if (void 0 !== value && "string" !== typeof value) {
-      throw new ValidationError(`wp-release config ${configFile}.${key} must be a string.`);
-    }
-  }
-  if ("" === candidate.changelogInsertAfter) {
-    throw new ValidationError(`wp-release config ${configFile}.changelogInsertAfter must not be empty.`);
-  }
-  if (void 0 !== candidate.tagFormat && "string" !== typeof candidate.tagFormat) {
-    throw new ValidationError(`wp-release config ${configFile}.tagFormat must be a string.`);
-  }
-  if (void 0 !== candidate.readmeChangelog && "boolean" !== typeof candidate.readmeChangelog) {
-    throw new ValidationError(`wp-release config ${configFile}.readmeChangelog must be a boolean.`);
-  }
-  if (void 0 !== candidate.nextVersion && "function" !== typeof candidate.nextVersion) {
-    throw new ValidationError(`wp-release config ${configFile}.nextVersion must be a function.`);
-  }
-  if (void 0 !== candidate.changelogEntry && "function" !== typeof candidate.changelogEntry) {
-    throw new ValidationError(`wp-release config ${configFile}.changelogEntry must be a function.`);
-  }
-  if (void 0 !== candidate.dependents && ("object" !== typeof candidate.dependents || Array.isArray(candidate.dependents) || null === candidate.dependents)) {
-    throw new ValidationError(`wp-release config ${configFile}.dependents must be an object.`);
-  }
-  const dependentsOptions = candidate.dependents;
-  if (void 0 !== dependentsOptions?.bump && !["patch", "minor", "major"].includes(dependentsOptions.bump)) {
-    throw new ValidationError(`wp-release config ${configFile}.dependents.bump must be patch, minor or major.`);
-  }
-  if (void 0 !== dependentsOptions?.exclude && (!Array.isArray(dependentsOptions.exclude) || !dependentsOptions.exclude.length || dependentsOptions.exclude.some((item) => "string" !== typeof item || !item.trim()))) {
-    throw new ValidationError(`wp-release config ${configFile}.dependents.exclude must be an array of non-empty strings.`);
-  }
-  if (void 0 !== dependentsOptions?.when && !["out-of-range", "always"].includes(dependentsOptions.when)) {
-    throw new ValidationError(`wp-release config ${configFile}.dependents.when must be out-of-range or always.`);
-  }
-  if (void 0 !== dependentsOptions?.sections && (!Array.isArray(dependentsOptions.sections) || !dependentsOptions.sections.length || dependentsOptions.sections.some((section) => ![
-    "dependencies",
-    "optionalDependencies",
-    "peerDependencies",
-    "devDependencies"
-  ].includes(section)))) {
-    throw new ValidationError(`wp-release config ${configFile}.dependents.sections must be a list of dependencies, optionalDependencies, peerDependencies or devDependencies.`);
-  }
-  if (void 0 !== dependentsOptions?.changelog && "function" !== typeof dependentsOptions.changelog) {
-    throw new ValidationError(`wp-release config ${configFile}.dependents.changelog must be a function.`);
-  }
-  if (void 0 !== dependentsOptions?.dependency) {
-    if ("object" !== typeof dependentsOptions.dependency || null === dependentsOptions.dependency) {
-      throw new ValidationError(`wp-release config ${configFile}.dependents.dependency must be an object.`);
-    }
-    ["find", "update"].forEach((key) => {
-      if (void 0 !== dependentsOptions.dependency[key] && "function" !== typeof dependentsOptions.dependency[key]) {
-        throw new ValidationError(`wp-release config ${configFile}.dependents.dependency.${key} must be a function.`);
-      }
-    });
-  }
-  if (void 0 !== candidate.releaseNotes && "function" !== typeof candidate.releaseNotes) {
-    throw new ValidationError(`wp-release config ${configFile}.releaseNotes must be a function.`);
-  }
-  candidate.packages.forEach((group, index) => {
-    if ("object" !== typeof group || null === group || "object" !== typeof group.version || null === group.version || "object" !== typeof group.version.from || !Array.isArray(group.version.to)) {
-      throw new ValidationError(`wp-release config ${configFile} has an invalid packages[${index}] entry.`);
-    }
-    if (void 0 !== group.idFrom && !["path", "package.json#name", "composer.json#name"].includes(group.idFrom)) {
-      throw new ValidationError(`wp-release config ${configFile} packages[${index}].idFrom is not supported.`);
-    }
-    if ("string" !== typeof group.glob || !group.glob.trim()) {
-      throw new ValidationError(`wp-release config ${configFile} packages[${index}].glob must be a non-empty string.`);
-    }
-    if ("string" !== typeof group.tagType && void 0 !== group.tagType) {
-      throw new ValidationError(`wp-release config ${configFile} packages[${index}].tagType must be a string.`);
-    }
-    if (void 0 !== group.exclude && (!Array.isArray(group.exclude) || group.exclude.some((item) => "string" !== typeof item))) {
-      throw new ValidationError(`wp-release config ${configFile} packages[${index}].exclude must be an array of strings.`);
-    }
-    validateVersionDescriptor(group.version.from, `${configFile}.packages[${index}].version.from`, false);
-    group.version.to.forEach((target, targetIndex) => validateVersionDescriptor(target, `${configFile}.packages[${index}].version.to[${targetIndex}]`, true));
-  });
-}
-function validateVersionDescriptor(descriptor, location, isTarget) {
-  if ("object" !== typeof descriptor || null === descriptor) {
-    throw new ValidationError(`wp-release config ${location} must be an object.`);
-  }
-  const candidate = descriptor;
-  const sourceKinds = [
-    "package-json",
-    "composer-json",
-    "wordpress-plugin-header",
-    "wordpress-theme-header",
-    "wordpress-stable-tag",
-    "php-constant",
-    "git-tag"
-  ];
-  const targetKinds = sourceKinds.filter((kind) => "git-tag" !== kind);
-  const kinds = isTarget ? targetKinds : sourceKinds;
-  if ("string" !== typeof candidate.kind || !kinds.includes(candidate.kind)) {
-    throw new ValidationError(`wp-release config ${location}.kind is not supported.`);
-  }
-  const needsFile = [
-    "package-json",
-    "composer-json",
-    "php-constant"
-  ].includes(candidate.kind);
-  if (needsFile && ("string" !== typeof candidate.file || !candidate.file.trim())) {
-    throw new ValidationError(`wp-release config ${location}.file must be a non-empty string.`);
-  }
-  if (["package-json", "composer-json"].includes(candidate.kind) && "version" !== candidate.field) {
-    throw new ValidationError(`wp-release config ${location}.field must be "version".`);
-  }
-  if ("php-constant" === candidate.kind && ("string" !== typeof candidate.constant || !candidate.constant.trim())) {
-    throw new ValidationError(`wp-release config ${location}.constant must be a non-empty string.`);
-  }
-  if ("git-tag" === candidate.kind && void 0 !== candidate.pattern && "string" !== typeof candidate.pattern) {
-    throw new ValidationError(`wp-release config ${location}.pattern must be a string.`);
-  }
-  if (void 0 !== candidate.ifPresent && "boolean" !== typeof candidate.ifPresent) {
-    throw new ValidationError(`wp-release config ${location}.ifPresent must be a boolean.`);
-  }
-}
-
 // ../../js/wp-release/dist/changeset-dependents.js
 var import_satisfies = __toESM(require_satisfies(), 1);
 var import_valid = __toESM(require_valid(), 1);
 import { readFile as readFile11, writeFile as writeFile6 } from "node:fs/promises";
-import path6 from "node:path";
+import path8 from "node:path";
 import { isDeepStrictEqual } from "node:util";
 var DEFAULT_SECTIONS = ["dependencies", "optionalDependencies"];
 async function applyDependents(releases, packages, config) {
@@ -28361,7 +28999,7 @@ function withoutSpecs(manifest, sections, identifiers) {
   return stripped;
 }
 function manifestFile(pkg) {
-  return path6.join(pkg.directory, "package.json");
+  return path8.join(pkg.directory, "package.json");
 }
 function hasChangeset(changesets, name) {
   return changesets.some((changeset) => Object.hasOwn(changeset.packages, name));
@@ -28453,25 +29091,25 @@ async function findDependencyHookSpecs(dependent, source, rule) {
     source
   });
   return (found ?? []).map((entry) => ({
-    file: path6.resolve(dependent.directory, entry.file),
+    file: path8.resolve(dependent.directory, entry.file),
     name: entry.name,
     spec: entry.spec
   }));
 }
 async function findNpmSpecs(dependent, source, sections) {
-  const sourceManifest = await readJsonIfExists(path6.join(source.directory, "package.json"));
+  const sourceManifest = await readJsonIfExists(path8.join(source.directory, "package.json"));
   if ("string" !== typeof sourceManifest?.name) {
     return [];
   }
   const identifier = sourceManifest.name;
-  const parsed = await readJsonIfExists(path6.join(dependent.directory, "package.json"));
+  const parsed = await readJsonIfExists(path8.join(dependent.directory, "package.json"));
   const specs = [];
   for (const section of sections) {
     const sectionSpecs = parsed?.[section];
     const declared = "object" === typeof sectionSpecs && null !== sectionSpecs && Object.hasOwn(sectionSpecs, identifier) ? String(sectionSpecs[identifier]) : void 0;
     if (void 0 !== declared) {
       specs.push({
-        file: path6.join(dependent.directory, "package.json"),
+        file: path8.join(dependent.directory, "package.json"),
         name: identifier,
         spec: declared
       });
@@ -28515,7 +29153,7 @@ function isExcludedDependent(dependent, rule) {
 // ../../js/wp-release/dist/changeset-files.js
 import { randomUUID as randomUUID2 } from "node:crypto";
 import { access as access4, mkdir as mkdir7, readdir as readdir6, readFile as readFile12, rm as rm7, writeFile as writeFile7 } from "node:fs/promises";
-import path7 from "node:path";
+import path9 from "node:path";
 async function readChangesets(directory) {
   let entries;
   try {
@@ -28526,7 +29164,7 @@ async function readChangesets(directory) {
     }
     throw error;
   }
-  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile12(path7.join(directory, name), "utf8"), name)));
+  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile12(path9.join(directory, name), "utf8"), name)));
 }
 async function readChangesetsSince(repository, directory, changesets, since, uncommitted = false) {
   const relativeDirectory = repository.relativePath(directory);
@@ -28535,12 +29173,12 @@ async function readChangesetsSince(repository, directory, changesets, since, unc
     diffFilter: "ACMR",
     uncommitted
   }));
-  return changesets.filter((changeset) => changedFiles.has(path7.posix.join(relativeDirectory, changeset.fileName)));
+  return changesets.filter((changeset) => changedFiles.has(path9.posix.join(relativeDirectory, changeset.fileName)));
 }
 async function writeChangeset(directory, packages, summary2, name) {
   await mkdir7(directory, { recursive: true });
   const fileName = `${name ?? randomUUID2().slice(0, 8)}.md`;
-  const file = path7.join(directory, fileName);
+  const file = path9.join(directory, fileName);
   let exists2 = false;
   try {
     await access4(file);
@@ -28661,181 +29299,6 @@ async function getReleaseNotes(repository, config, pkg, release, end) {
   }
   return formatted.trim();
 }
-
-// ../../js/wp-release/dist/release-repository.js
-import path8 from "node:path";
-var ReleaseRepository = class {
-  cwd;
-  runner;
-  /**
-   * @param options Repository root and git runner.
-   */
-  constructor(options2) {
-    this.cwd = path8.resolve(options2.cwd);
-    this.runner = options2.runner ?? createGitRunner();
-  }
-  /**
-   * Run a git command in the repository. The repository is marked as a safe
-   * directory, because CI containers often check it out as another user.
-   *
-   * @param  args Arguments after "git".
-   * @return Standard output.
-   * @throws {ValidationError} If the command fails.
-   */
-  async run(args) {
-    try {
-      const { stdout } = await this.runner({
-        args: ["-c", `safe.directory=${this.cwd}`, ...args],
-        cwd: this.cwd
-      });
-      return stdout;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new ValidationError(`Git command failed (${args.join(" ")}): ${message}`);
-    }
-  }
-  /**
-   * Get the path of a file relative to the repository root, with forward
-   * slashes as git expects.
-   *
-   * @param file Absolute or relative file path.
-   * @return Relative path, empty for the root itself.
-   */
-  relativePath(file) {
-    return path8.relative(this.cwd, file).split(path8.sep).join("/");
-  }
-  /**
-   * Check whether a tag exists.
-   *
-   * @param tag Tag name.
-   * @return Whether the tag exists.
-   */
-  async tagExists(tag) {
-    const output = await this.run(["tag", "--list", tag]);
-    return output.trim() === tag;
-  }
-  /**
-   * List the tags that start with a prefix.
-   *
-   * @param prefix Tag prefix, like `plugins/alpha/`.
-   * @return Tag names.
-   */
-  async listTags(prefix) {
-    const output = await this.run(["tag", "--list", `${prefix}*`]);
-    return output.trim().split(/\r?\n/).filter(Boolean);
-  }
-  /**
-   * Tag the current commit.
-   *
-   * @param tag Tag name.
-   */
-  async createTag(tag) {
-    await this.run(["tag", tag]);
-  }
-  /**
-   * Push a tag to the origin remote.
-   *
-   * @param tag Tag name.
-   */
-  async pushTag(tag) {
-    await this.run(["push", "origin", tag]);
-  }
-  /**
-   * Find the commit that added a file.
-   *
-   * @param file File path.
-   * @return Commit, or undefined when the file isn't committed.
-   */
-  async getAddedCommit(file) {
-    const [commit] = await this.getCommits([
-      "--diff-filter=A",
-      "-1",
-      "--",
-      this.relativePath(file)
-    ]);
-    return commit;
-  }
-  /**
-   * List the commits of a revision range that changed a directory.
-   *
-   * @param revision  Revision range, like `plugins/alpha/1.0.0..HEAD`.
-   * @param directory Directory the commits changed.
-   * @return Commits, newest first.
-   */
-  async getDirectoryCommits(revision, directory) {
-    return this.getCommits([
-      revision,
-      "--",
-      this.relativePath(directory) || "."
-    ]);
-  }
-  /**
-   * List the files changed between the merge base of a ref and HEAD, or the
-   * working tree with the uncommitted option, which adds untracked files.
-   *
-   * @param since   Base ref, like origin/main.
-   * @param options Directory, diff filter and uncommitted files.
-   * @return Changed files relative to the repository root.
-   */
-  async getChangedFiles(since, options2 = {}) {
-    const pathspec = options2.directory ? ["--", this.relativePath(options2.directory)] : [];
-    const range = options2.uncommitted ? (await this.run(["merge-base", since, "HEAD"])).trim() : `${since}...HEAD`;
-    const output = await this.run([
-      "diff",
-      "--name-only",
-      ...options2.diffFilter ? [`--diff-filter=${options2.diffFilter}`] : [],
-      range,
-      ...pathspec
-    ]);
-    const untracked = options2.uncommitted ? await this.run([
-      "ls-files",
-      "--others",
-      "--exclude-standard",
-      "--full-name",
-      ...pathspec
-    ]) : "";
-    const files = `${output}
-${untracked}`.split(/\r?\n/).filter(Boolean);
-    return [...new Set(files)];
-  }
-  /**
-   * Read a file as of the merge base of a ref and HEAD, the side that
-   * getChangedFiles() diffs against.
-   *
-   * @param since Base ref, like origin/main.
-   * @param file  Absolute or relative file path.
-   * @return File contents, or undefined when the file doesn't exist there.
-   */
-  async readFileAtMergeBase(since, file) {
-    const base = (await this.run(["merge-base", since, "HEAD"])).trim();
-    const relative4 = this.relativePath(file);
-    const listed = await this.run([
-      "ls-tree",
-      "--name-only",
-      base,
-      "--",
-      relative4
-    ]);
-    return "" === listed.trim() ? void 0 : this.run(["show", `${base}:${relative4}`]);
-  }
-  /**
-   * Run git log and parse the commits.
-   *
-   * @param args Arguments after the format option.
-   * @return Commits, newest first.
-   */
-  async getCommits(args) {
-    const output = await this.run([
-      "log",
-      "--format=%H%x1f%h%x1f%s",
-      ...args
-    ]);
-    return output.trim().split(/\r?\n/).filter(Boolean).map((line) => {
-      const [hash = "", shortHash = "", subject = ""] = line.split("");
-      return { hash, shortHash, subject };
-    });
-  }
-};
 
 // ../../js/wp-release/dist/changeset-release.js
 var MISSING_CONFIG = "No wp-release config found. Add wp-release.config.js or pass --config <path>.";
@@ -29092,7 +29555,7 @@ var ChangesetRelease = class {
         await this.writeRelease(context, plan, release, date, journal);
       }
       for (const changeset of plan.changesets) {
-        await consumeChangeset(path9.join(changesetDirectory, changeset.fileName), changeset, applied, journal);
+        await consumeChangeset(path10.join(changesetDirectory, changeset.fileName), changeset, applied, journal);
       }
     } catch (error) {
       const rollbackErrors = await journal.restore();
@@ -29224,7 +29687,7 @@ var ChangesetRelease = class {
    * @return Absolute directory path.
    */
   getChangesetDirectory(config) {
-    return path9.resolve(this.cwd, config.changesets ?? ".changeset");
+    return path10.resolve(this.cwd, config.changesets ?? ".changeset");
   }
 };
 async function versionChangesets(input2) {
