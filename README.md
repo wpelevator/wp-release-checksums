@@ -4,7 +4,7 @@
 
 GitHub Action that writes a checksums manifest of a WordPress plugin or theme using [`@wpelevator/wp-release`](https://www.npmjs.com/package/@wpelevator/wp-release). It's named after the [`wp-release checksums`](https://www.npmjs.com/package/@wpelevator/wp-release#checksums) command that it runs.
 
-The manifest lists the MD5 and SHA-256 hash of every distributed file in the format of the WordPress.org plugin checksums API, with paths relative to the plugin or theme folder. Because it lists the files and not the ZIP, it stays valid for the GitHub release ZIP, the ZIP that WordPress.org builds from SVN and an installed copy. To get one together with the ZIP, use the `checksums` input of [`wp-release-zip`](https://github.com/wpelevator/wp-release-zip) instead, so that both select the same files. [`wp-release-sign`](https://github.com/wpelevator/wp-release-sign) signs the manifest so that it can be trusted.
+By default, the manifest lists the MD5 and SHA-256 hash of every distributed file in the format of the WordPress.org plugin checksums API, with paths relative to the plugin or theme folder. Because it lists the files and not the ZIP, it stays valid for the GitHub release ZIP, the ZIP that WordPress.org builds from SVN and an installed copy. To get one together with the ZIP, use the `checksums` input of [`wp-release-zip`](https://github.com/wpelevator/wp-release-zip) instead, so that both select the same files. [`wp-release-sign`](https://github.com/wpelevator/wp-release-sign) signs the manifest so that it can be trusted.
 
 ## Usage
 
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - id: checksums
-        uses: wpelevator/wp-release-checksums@0.3.6
+        uses: wpelevator/wp-release-checksums@0.4.0
         with:
           source-dir: dist
 ```
@@ -34,17 +34,17 @@ jobs:
 To ship the signed manifest inside the plugin, so that an installed copy can be verified later, write it into the directory that is zipped and deployed, sign it, and then zip and deploy that directory:
 
 ```yaml
-      - uses: wpelevator/wp-release-checksums@0.3.6
+      - uses: wpelevator/wp-release-checksums@0.4.0
         with:
           source-dir: dist
           output: dist/checksums.json
 
-      - uses: wpelevator/wp-release-sign@0.3.0
+      - uses: wpelevator/wp-release-sign@0.3.1
         with:
           files: dist/checksums.json
           signing-key: ${{ secrets.WP_RELEASE_SIGNING_KEY }}
 
-      - uses: wpelevator/wp-release-zip@0.5.0
+      - uses: wpelevator/wp-release-zip@0.6.0
         with:
           source-dir: dist # Without the checksums input, which would write a second manifest.
 ```
@@ -53,14 +53,20 @@ The manifest doesn't list itself or its `.sig`, and `output` can be any path ins
 
 These checksum and signing steps need only `contents: read` for checkout; signing uses the supplied secret. Set this permission on jobs using the step examples in this README.
 
+### GNU and custom manifest formats
+
+The `checksums-format: sha256sum` input writes GNU-compatible SHA-256 lines and defaults to `SHA256SUMS`; `output` still selects an explicit path relative to the repository root. `config` selects a trusted release config containing `integrity.codec`, including custom codecs; `checksums-format` overrides that codec. The standalone command does not apply `integrity.file`, embedding, signing or algorithm selection: use the ZIP action for those options and the sign action for standalone signatures.
+
 ## Inputs
 
 | Input | Default | Description |
 |---|---|---|
 | `source-dir` | `.` | Directory to hash. |
+| `config` | conventional config in the repository root | Trusted JavaScript config path for `integrity.codec`. |
+| `checksums-format` | `integrity.codec`, else `wordpress-json` | `wordpress-json` or `sha256sum`; GNU output defaults to `SHA256SUMS` instead of the JSON filename. |
 | `slug` | repository name | Plugin or theme slug. |
 | `version` | `Version` header | Version for the manifest and its filename. |
-| `filename-format` | `{slug}.{version}` | Filename with `{slug}` and `{version}`, followed by `.checksums.json`. |
+| `filename-format` | `{slug}.{version}` | JSON filename with `{slug}` and `{version}`, followed by `.checksums.json`; other codecs use their default filename unless `output` is supplied. |
 | `output` | the filename in the repository root | Path of the manifest. |
 | `distignore` | `.distignore` in `source-dir` when present | Path to the ignore file, or `false` to not read one. |
 | `exclude` | | Extra gitignore-style patterns separated by commas or new lines, like `build/,assets/*,images/**/*`. They're applied after the ignore file, so a `!` pattern can re-include a file. |
@@ -88,7 +94,7 @@ npm install --save-dev @wpelevator/wp-release
 npx wp-release checksums dist
 ```
 
-The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/package/@wpelevator/wp-release#checksums): `source-dir` is the first argument, `slug`, `version`, `type`, `filename-format`, `output`, `distignore`, `exclude`, `exclude-gitattributes` and `force` keep their names, and `distignore: false` is `--no-distignore`. Add `--json` to read the path of the manifest from the output. The CLI needs Node.js 22.12 or later, and has no other dependencies on the runner. Run `npx wp-release checksums --help` for all options.
+The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/package/@wpelevator/wp-release#checksums): `source-dir` is the first argument, `config`, `checksums-format`, `slug`, `version`, `type`, `filename-format`, `output`, `distignore`, `exclude`, `exclude-gitattributes` and `force` keep their names, and `distignore: false` is `--no-distignore`. Add `--json` to read the path of the manifest from the output. The CLI needs Node.js 22.12 or later, and has no other dependencies on the runner. Run `npx wp-release checksums --help` for all options.
 
 ## How it works
 
@@ -96,7 +102,7 @@ The inputs map to the flags of [`wp-release checksums`](https://www.npmjs.com/pa
 
 ## Development
 
-The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo. `npm run build` bundles the `@wpelevator/wp-release` dependency at the version that the action's `package.json` pins. The dependents policy of the monorepo release configuration re-releases the actions whenever a later version falls outside their pins and rewrites them, so they don't need a manual update. A pin that drifts from the published version, like a deliberate pin to an older release, selects a registry install instead, and `changeset-status` warns until the pin resolves the package again. The split-push workflow commits the bundle to the action's release repository. `npm test` runs the input mapping tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
+The source is TypeScript in `src/`. `dist/` is git-ignored in the monorepo. `npm run build` bundles the `@wpelevator/wp-release` dependency at the version that the action's `package.json` pins. The dependents policy of the monorepo release configuration re-releases the actions whenever a later version falls outside their pins and rewrites them, so they don't need a manual update. A pin that drifts from the published version, like a deliberate pin to an older release, selects a registry install instead, and `changeset-status` warns until the pin resolves the package again. The split-push workflow commits the bundle to the action's release repository. `npm test` runs the input mapping and action execution tests with Node.js type stripping, and `npm run lint` runs ESLint and a `tsc` type check.
 
 ```bash
 npm run build --workspace @wpelevator/wp-release-checksums-action
