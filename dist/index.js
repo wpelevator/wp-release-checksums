@@ -23914,7 +23914,8 @@ function createGitRunner(binary = "git") {
 
 // ../../js/wp-release/dist/signing.js
 import { createPrivateKey, generateKeyPairSync, sign as sign3, verify as verify3 } from "node:crypto";
-import { readFile as readFile3, writeFile as writeFile2 } from "node:fs/promises";
+import { existsSync as existsSync2 } from "node:fs";
+import { readFile as readFile3, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
 
 // ../../js/wp-release/dist/ed25519.js
 import { createHash, createPublicKey } from "node:crypto";
@@ -24177,6 +24178,38 @@ async function writeSignature(path10, privateKey, force = false, format = DEFAUL
     throw "EEXIST" === error.code ? new ValidationError(`${signaturePath} already exists, pass --force to overwrite it.`) : error;
   });
   return signaturePath;
+}
+function checkSigningInput(input2) {
+  const encoded = input2.key ?? process.env[SIGNING_KEY_ENV];
+  const formats = input2.formats ?? [DEFAULT_SIGNATURE_FORMAT];
+  if (!encoded?.trim()) {
+    throw new ValidationError(`Set the ${SIGNING_KEY_ENV} environment variable to the base64 Ed25519 signing key.`);
+  }
+  const privateKey = parseSigningKey(encoded);
+  const existing = input2.paths.flatMap((path10) => formats.map((format) => getSignaturePath(path10, format))).filter((path10) => !input2.force && existsSync2(path10));
+  if (existing.length) {
+    throw new ValidationError(`${existing.join(" and ")} already exists, pass --force to overwrite it.`);
+  }
+  return privateKey;
+}
+async function signFiles(input2) {
+  const formats = input2.formats ?? [DEFAULT_SIGNATURE_FORMAT];
+  const privateKey = checkSigningInput(input2);
+  await Promise.all(input2.paths.map(async (path10) => {
+    if (!(await stat2(path10).catch(() => null))?.isFile()) {
+      throw new ValidationError(`${path10} is not a file.`);
+    }
+  }));
+  const signatures = [];
+  const jobs = input2.paths.flatMap((path10) => formats.map((format) => ({ path: path10, format })));
+  for (const { path: path10, format } of jobs) {
+    signatures.push(await writeSignature(path10, privateKey, input2.force, format));
+  }
+  return {
+    signatures,
+    publicKey: getPublicKey(privateKey),
+    publicKeys: getPublicKeys(privateKey)
+  };
 }
 async function verifyFileSignature(path10, signaturePath, publicKey, format = DEFAULT_SIGNATURE_FORMAT) {
   return SIGNATURE_FORMATS[format].verify(path10, signaturePath, publicKey);
@@ -24820,7 +24853,7 @@ import { readFile as readFile7 } from "node:fs/promises";
 import { join as join3 } from "node:path";
 
 // ../../js/wp-release/dist/deploy-options.js
-import { existsSync as existsSync2 } from "node:fs";
+import { existsSync as existsSync3 } from "node:fs";
 import { basename as basename2, resolve as resolve2 } from "node:path";
 var SVN_URL = "https://plugins.svn.wordpress.org/{slug}/";
 function isPrerelease(version) {
@@ -24859,7 +24892,7 @@ function getDeployOptionErrors(options2) {
   if (assets && !assetsDir) {
     errors.push("Syncing assets requires --assets-dir.");
   }
-  if (assets && assetsDir && !existsSync2(assetsDir)) {
+  if (assets && assetsDir && !existsSync3(assetsDir)) {
     errors.push(`Assets directory ${assetsDir} doesn't exist.`);
   }
   if (!isValidFilename(options2.readme)) {
@@ -25825,7 +25858,7 @@ function getDeployPlan(deploys) {
 }
 
 // ../../js/wp-release/dist/package-zip.js
-import { existsSync as existsSync3 } from "node:fs";
+import { existsSync as existsSync4 } from "node:fs";
 
 // ../../js/wp-release/dist/checksums.js
 import { createReadStream as createReadStream2 } from "node:fs";
@@ -25986,7 +26019,7 @@ function getChecksumsPath(zipPath) {
   return name + CHECKSUMS_EXTENSION;
 }
 function checkOverwrite(paths, force) {
-  const existing = paths.filter((path10) => !force && existsSync3(path10));
+  const existing = paths.filter((path10) => !force && existsSync4(path10));
   if (existing.length) {
     throw new ValidationError(`${existing.join(" and ")} already exists, pass --force to overwrite it.`);
   }
@@ -26209,7 +26242,7 @@ function getGitDeploySummary(context, input2) {
 }
 
 // ../../js/wp-release/dist/commands/args.js
-import { stat as stat2 } from "node:fs/promises";
+import { stat as stat3 } from "node:fs/promises";
 import { resolve as resolve4 } from "node:path";
 
 // ../../js/wp-release/dist/commands/command.js
@@ -26250,7 +26283,7 @@ async function checkDirectory(path10) {
   }
 }
 async function isDirectory2(path10) {
-  const stats = await stat2(path10).catch(() => null);
+  const stats = await stat3(path10).catch(() => null);
   return Boolean(stats?.isDirectory());
 }
 var sourceDirArgs = {
@@ -26266,6 +26299,14 @@ function getSourceDirArg(values, positionals) {
 }
 function resolveOutput(input2) {
   return resolve4(input2.cwd, input2.output ?? input2.filename);
+}
+function parseSignatureFormats(values) {
+  const names = values.flatMap((value) => value.split(",")).map((name) => name.trim()).filter(Boolean);
+  const unknown = names.filter((name) => !isSignatureFormat(name));
+  if (unknown.length) {
+    throw new ValidationError(`Unknown signature format ${unknown.join(", ")}, use ${Object.keys(SIGNATURE_FORMATS).join(", ")}.`);
+  }
+  return names.length ? [...new Set(names.filter(isSignatureFormat))] : [DEFAULT_SIGNATURE_FORMAT];
 }
 
 // ../../js/wp-release/dist/commands/zip.js
@@ -26352,6 +26393,14 @@ Options:
   --checksums                 Also write the checksums manifest of the archived
                               files next to the ZIP, with .checksums.json
                               instead of .zip
+  --sign                      Also sign the ZIP and the checksums manifest with
+                              the ${SIGNING_KEY_ENV} key, like
+                              "wp-release sign", writing a WordPress .sig next
+                              to each
+  --sign-format <names>       Signature formats of --sign, comma-separated or
+                              repeated, like wordpress,minisign,ssh, as the
+                              --format of "wp-release sign" (default:
+                              wordpress); implies --sign
   --force                     Overwrite existing output files
 
 Entries are sorted and use a fixed timestamp and file mode, so the same files
@@ -26373,20 +26422,35 @@ Examples:
     ...fileSelectionArgs,
     package: { type: "string" },
     checksums: { type: "boolean" },
+    sign: { type: "boolean" },
+    "sign-format": { type: "string", multiple: true },
     force: { type: "boolean" }
   },
   async run({ values, positionals, cwd, configFile, logger: logger2 }) {
     const name = getPackageArg(values, positionals);
     const source = name ? await getPackageSource(values, cwd, name, configFile) : await getDirectorySource(values, positionals, cwd);
     const filename = formatFilename(getString(values, "filename-format") ?? FILENAME_FORMAT, { slug: source.slug, version: source.version });
+    const zipPath = resolveOutput({
+      cwd,
+      output: getString(values, "output"),
+      filename: `${filename}.zip`
+    });
+    const signFormats = getStrings(values, "sign-format");
+    const signing = getBoolean(values, "sign") || signFormats.length ? {
+      paths: [
+        zipPath,
+        ...getBoolean(values, "checksums") ? [getChecksumsPath(zipPath)] : []
+      ],
+      formats: parseSignatureFormats(signFormats),
+      force: getBoolean(values, "force")
+    } : void 0;
+    if (signing) {
+      checkSigningInput(signing);
+    }
     const zipped = await zipPackage({
       sourceDir: source.sourceDir,
       selection: source.selection,
-      zipPath: resolveOutput({
-        cwd,
-        output: getString(values, "output"),
-        filename: `${filename}.zip`
-      }),
+      zipPath,
       rootFolder: getBoolean(values, "no-root-folder") ? null : getString(values, "root-folder") ?? source.slug,
       slug: source.slug,
       version: source.version,
@@ -26399,13 +26463,22 @@ Examples:
     if (zipped.checksumsPath) {
       logger2.info(zipped.checksumsPath);
     }
+    const signed = signing ? { ...await signFiles(signing), formats: signing.formats } : void 0;
+    signed?.signatures.forEach((path10) => logger2.info(path10));
     const result = {
       ...zipped,
+      ...signed ? {
+        signatures: signed.signatures,
+        publicKey: signed.publicKey
+      } : {},
       slug: source.slug,
       version: source.version,
       ...source.package ? { package: source.package } : {}
     };
     logger2.summary((context) => getZipSummary(context, result));
+    if (signed) {
+      logger2.summary((context) => getSignSummary(context, signed));
+    }
     return { exitCode: 0, result };
   }
 };
@@ -26487,15 +26560,6 @@ matches the ZIP contents.`,
 
 // ../../js/wp-release/dist/commands/sign.js
 import { resolve as resolve7 } from "node:path";
-import { stat as stat3 } from "node:fs/promises";
-function parseSignatureFormats(values) {
-  const names = values.flatMap((value) => value.split(",")).map((name) => name.trim()).filter(Boolean);
-  const unknown = names.filter((name) => !isSignatureFormat(name));
-  if (unknown.length) {
-    throw new ValidationError(`Unknown signature format ${unknown.join(", ")}, use ${Object.keys(SIGNATURE_FORMATS).join(", ")}.`);
-  }
-  return names.length ? [...new Set(names.filter(isSignatureFormat))] : [DEFAULT_SIGNATURE_FORMAT];
-}
 var sign_default = {
   name: "sign",
   usage: "sign <file>... [options]",
@@ -26529,33 +26593,18 @@ form of each format.`,
     force: { type: "boolean" }
   },
   async run({ values, positionals, cwd, logger: logger2 }) {
-    const encoded = process.env[SIGNING_KEY_ENV];
     const formats = parseSignatureFormats(getStrings(values, "format"));
     if (!positionals.length) {
       throw new ValidationError("Pass the files to sign.");
     }
-    if (!encoded?.trim()) {
-      throw new ValidationError(`Set the ${SIGNING_KEY_ENV} environment variable to the base64 Ed25519 signing key.`);
-    }
-    const privateKey = parseSigningKey(encoded);
-    const publicKey = getPublicKey(privateKey);
-    const publicKeys = getPublicKeys(privateKey);
-    const paths = positionals.map((file) => resolve7(cwd, file));
-    await Promise.all(paths.map(async (path10) => {
-      if (!(await stat3(path10).catch(() => null))?.isFile()) {
-        throw new ValidationError(`${path10} is not a file.`);
-      }
-    }));
-    formats.forEach((format) => logger2.debug(`Signing ${format} with the public key ${publicKeys[format]}.`));
-    const signatures = [];
-    const force = getBoolean(values, "force");
-    const jobs = paths.flatMap((path10) => formats.map((format) => ({ path: path10, format })));
-    for (const { path: path10, format } of jobs) {
-      const signaturePath = await writeSignature(path10, privateKey, force, format);
-      logger2.info(signaturePath);
-      signatures.push(signaturePath);
-    }
-    const result = { signatures, formats, publicKey, publicKeys };
+    const signed = await signFiles({
+      paths: positionals.map((file) => resolve7(cwd, file)),
+      formats,
+      force: getBoolean(values, "force")
+    });
+    formats.forEach((format) => logger2.debug(`Signed ${format} with the public key ${signed.publicKeys[format]}.`));
+    signed.signatures.forEach((path10) => logger2.info(path10));
+    const result = { ...signed, formats };
     logger2.summary((context) => getSignSummary(context, result));
     return { exitCode: 0, result };
   }
@@ -26589,7 +26638,7 @@ since the same key signs every format of "wp-release sign".`,
 };
 
 // ../../js/wp-release/dist/commands/verify.js
-import { existsSync as existsSync4 } from "node:fs";
+import { existsSync as existsSync5 } from "node:fs";
 import { mkdir as mkdir4, mkdtemp, readFile as readFile10, rm as rm3 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename as basename5, isAbsolute as isAbsolute3, join as join7, posix as posix3, resolve as resolve8 } from "node:path";
@@ -26706,7 +26755,7 @@ function openReadStream(zip, entry) {
 // ../../js/wp-release/dist/commands/verify.js
 async function checkSignature(checksumsPath, publicKey, format) {
   const signaturePath = getSignaturePath(checksumsPath, format);
-  if (!existsSync4(signaturePath)) {
+  if (!existsSync5(signaturePath)) {
     throw new ValidationError(`${signaturePath} doesn't exist.`);
   }
   if (!await verifyFileSignature(checksumsPath, signaturePath, parsePublicKey(publicKey), format)) {
@@ -26768,7 +26817,7 @@ function checkExplicitPairs(pairs, manifest) {
     if (Object.hasOwn(manifest.files, copy)) {
       throw new ValidationError(`The checksums list ${copy}, but a manifest can't list its own embedded copy.`);
     }
-    if (!existsSync4(original)) {
+    if (!existsSync5(original)) {
       throw new ValidationError(`--embedded needs ${original} to compare ${copy} with, but it doesn't exist.`);
     }
   });
@@ -26782,7 +26831,7 @@ async function checkEmbeddedCopies(input2) {
   if (embedded) {
     checkExplicitPairs(pairs, manifest);
   }
-  const found = pairs.filter(({ original, copy }) => existsSync4(join7(dir, copy)) && (embedded || existsSync4(original) && !Object.hasOwn(manifest.files, copy)));
+  const found = pairs.filter(({ original, copy }) => existsSync5(join7(dir, copy)) && (embedded || existsSync5(original) && !Object.hasOwn(manifest.files, copy)));
   const results = await Promise.all(found.map(async ({ original, copy }) => ({
     copy,
     isSame: await hasSameContents(original, join7(dir, copy))
@@ -26790,7 +26839,7 @@ async function checkEmbeddedCopies(input2) {
   return {
     paths: found.map(({ copy }) => copy),
     differing: results.filter(({ isSame }) => !isSame).map(({ copy }) => copy),
-    missing: embedded ? pairs.filter(({ copy }) => !existsSync4(join7(dir, copy))).map(({ copy }) => copy) : []
+    missing: embedded ? pairs.filter(({ copy }) => !existsSync5(join7(dir, copy))).map(({ copy }) => copy) : []
   };
 }
 function getVerifyProblems(dir, result) {
@@ -27052,7 +27101,7 @@ no Stable tag, so it's only checked for plugins.`,
 
 // ../../js/wp-release/dist/svn-deploy.js
 var import_ignore4 = __toESM(require_ignore(), 1);
-import { existsSync as existsSync5 } from "node:fs";
+import { existsSync as existsSync6 } from "node:fs";
 import { mkdir as mkdir6, mkdtemp as mkdtemp2, rm as rm5 } from "node:fs/promises";
 import { tmpdir as tmpdir2 } from "node:os";
 import { extname, join as join9, posix as posix4 } from "node:path";
@@ -27625,7 +27674,7 @@ var SvnDeploy = class {
    */
   async addMissingDirectory(path10) {
     const workingCopy = this.getWorkingCopy();
-    if (!existsSync5(join9(workingCopy, path10))) {
+    if (!existsSync6(join9(workingCopy, path10))) {
       await mkdir6(join9(workingCopy, path10));
       await this.svn.add({ paths: [path10], cwd: workingCopy });
     }
@@ -27637,7 +27686,7 @@ var SvnDeploy = class {
    */
   hasTag() {
     const tagPath = this.getTagPath();
-    return Boolean(tagPath && existsSync5(join9(this.getWorkingCopy(), tagPath)));
+    return Boolean(tagPath && existsSync6(join9(this.getWorkingCopy(), tagPath)));
   }
   /**
    * Copy the files for each write flag into the working copy and stage
