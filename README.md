@@ -10,9 +10,21 @@ The manifest lists the MD5 and SHA-256 hash of every distributed file in the for
 
 ## Usage
 
+These actions require a runner with the Node.js 24 action runtime. Keep self-hosted runners updated before using them.
+
+Pin `uses:` to the latest released version from the [releases page](https://github.com/wpelevator/wp-release-checksums/releases). Upgrades are intentionally manual: floating major or minor tags are not published.
+
 ```yaml
+jobs:
+  checksums:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
       - id: checksums
-        uses: wpelevator/wp-release-checksums@0.2.0
+        uses: wpelevator/wp-release-checksums@0.3.5
         with:
           source-dir: dist
 ```
@@ -22,22 +34,24 @@ The manifest lists the MD5 and SHA-256 hash of every distributed file in the for
 To ship the signed manifest inside the plugin, so that an installed copy can be verified later, write it into the directory that is zipped and deployed, sign it, and then zip and deploy that directory:
 
 ```yaml
-      - uses: wpelevator/wp-release-checksums@0.2.0
+      - uses: wpelevator/wp-release-checksums@0.3.5
         with:
           source-dir: dist
           output: dist/checksums.json
 
-      - uses: wpelevator/wp-release-sign@0.2.0
+      - uses: wpelevator/wp-release-sign@0.2.7
         with:
           files: dist/checksums.json
           signing-key: ${{ secrets.WP_RELEASE_SIGNING_KEY }}
 
-      - uses: wpelevator/wp-release-zip@0.2.0
+      - uses: wpelevator/wp-release-zip@0.4.0
         with:
           source-dir: dist # Without the checksums input, which would write a second manifest.
 ```
 
 The manifest doesn't list itself or its `.sig`, and `output` can be any path inside `source-dir`, such as `dist/includes/checksums.json`; missing folders are created. Attach the two files to the release as well. See [Manifest inside the plugin](https://www.npmjs.com/package/@wpelevator/wp-release#manifest-inside-the-plugin) for the post-deploy check against WordPress.org.
+
+These checksum and signing steps need only `contents: read` for checkout; signing uses the supplied secret. Set this permission on jobs using the step examples in this README.
 
 ## Inputs
 
