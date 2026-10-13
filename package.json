@@ -1,13 +1,13 @@
 {
 	"private": true,
 	"name": "@wpelevator/wp-release-checksums-action",
-	"version": "0.3.4",
+	"version": "0.3.5",
 	"description": "GitHub Action: write the MD5 and SHA-256 hashes of every distributed file of a WordPress plugin or theme to a checksums manifest.",
 	"license": "MIT",
 	"type": "module",
 	"dependencies": {
 		"@actions/core": "^3.0.1",
-		"@wpelevator/wp-release": "0.13.0"
+		"@wpelevator/wp-release": "0.14.0"
 	},
 	"devDependencies": {
 		"@types/node": "^22.20.5",
