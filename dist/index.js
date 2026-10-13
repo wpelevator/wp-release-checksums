@@ -2148,9 +2148,9 @@ var require_dispatcher_base = __commonJS({
       }
       close(callback) {
         if (callback === void 0) {
-          return new Promise((resolve13, reject) => {
+          return new Promise((resolve15, reject) => {
             this.close((err, data) => {
-              return err ? reject(err) : resolve13(data);
+              return err ? reject(err) : resolve15(data);
             });
           });
         }
@@ -2188,12 +2188,12 @@ var require_dispatcher_base = __commonJS({
           err = null;
         }
         if (callback === void 0) {
-          return new Promise((resolve13, reject) => {
+          return new Promise((resolve15, reject) => {
             this.destroy(err, (err2, data) => {
               return err2 ? (
                 /* istanbul ignore next: should never error */
                 reject(err2)
-              ) : resolve13(data);
+              ) : resolve15(data);
             });
           });
         }
@@ -4460,8 +4460,8 @@ var require_util2 = __commonJS({
     function createDeferredPromise() {
       let res;
       let rej;
-      const promise = new Promise((resolve13, reject) => {
-        res = resolve13;
+      const promise = new Promise((resolve15, reject) => {
+        res = resolve15;
         rej = reject;
       });
       return { promise, resolve: res, reject: rej };
@@ -6713,12 +6713,12 @@ upgrade: ${upgrade}\r
           cb();
         }
       }
-      const waitForDrain = () => new Promise((resolve13, reject) => {
+      const waitForDrain = () => new Promise((resolve15, reject) => {
         assert(callback === null);
         if (socket[kError]) {
           reject(socket[kError]);
         } else {
-          callback = resolve13;
+          callback = resolve15;
         }
       });
       socket.on("close", onDrain).on("drain", onDrain);
@@ -7390,12 +7390,12 @@ var require_client_h2 = __commonJS({
           cb();
         }
       }
-      const waitForDrain = () => new Promise((resolve13, reject) => {
+      const waitForDrain = () => new Promise((resolve15, reject) => {
         assert(callback === null);
         if (socket[kError]) {
           reject(socket[kError]);
         } else {
-          callback = resolve13;
+          callback = resolve15;
         }
       });
       h2stream.on("close", onDrain).on("drain", onDrain);
@@ -7873,16 +7873,16 @@ var require_client = __commonJS({
         return this[kNeedDrain] < 2;
       }
       async [kClose]() {
-        return new Promise((resolve13) => {
+        return new Promise((resolve15) => {
           if (this[kSize]) {
-            this[kClosedResolve] = resolve13;
+            this[kClosedResolve] = resolve15;
           } else {
-            resolve13(null);
+            resolve15(null);
           }
         });
       }
       async [kDestroy](err) {
-        return new Promise((resolve13) => {
+        return new Promise((resolve15) => {
           const requests = this[kQueue].splice(this[kPendingIdx]);
           for (let i = 0; i < requests.length; i++) {
             const request = requests[i];
@@ -7893,7 +7893,7 @@ var require_client = __commonJS({
               this[kClosedResolve]();
               this[kClosedResolve] = null;
             }
-            resolve13(null);
+            resolve15(null);
           };
           if (this[kHTTPContext]) {
             this[kHTTPContext].destroy(err, callback);
@@ -7944,7 +7944,7 @@ var require_client = __commonJS({
         });
       }
       try {
-        const socket = await new Promise((resolve13, reject) => {
+        const socket = await new Promise((resolve15, reject) => {
           client[kConnector]({
             host,
             hostname,
@@ -7956,7 +7956,7 @@ var require_client = __commonJS({
             if (err) {
               reject(err);
             } else {
-              resolve13(socket2);
+              resolve15(socket2);
             }
           });
         });
@@ -8292,8 +8292,8 @@ var require_pool_base = __commonJS({
         if (this[kQueue].isEmpty()) {
           await Promise.all(this[kClients].map((c) => c.close()));
         } else {
-          await new Promise((resolve13) => {
-            this[kClosedResolve] = resolve13;
+          await new Promise((resolve15) => {
+            this[kClosedResolve] = resolve15;
           });
         }
       }
@@ -9559,7 +9559,7 @@ var require_readable = __commonJS({
         if (this._readableState.closeEmitted) {
           return null;
         }
-        return await new Promise((resolve13, reject) => {
+        return await new Promise((resolve15, reject) => {
           if (this[kContentLength] > limit) {
             this.destroy(new AbortError());
           }
@@ -9572,7 +9572,7 @@ var require_readable = __commonJS({
             if (signal?.aborted) {
               reject(signal.reason ?? new AbortError());
             } else {
-              resolve13(null);
+              resolve15(null);
             }
           }).on("error", noop).on("data", function(chunk) {
             limit -= chunk.length;
@@ -9591,7 +9591,7 @@ var require_readable = __commonJS({
     }
     async function consume(stream, type) {
       assert(!stream[kConsume]);
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         if (isUnusable(stream)) {
           const rState = stream._readableState;
           if (rState.destroyed && rState.closeEmitted === false) {
@@ -9608,7 +9608,7 @@ var require_readable = __commonJS({
             stream[kConsume] = {
               type,
               stream,
-              resolve: resolve13,
+              resolve: resolve15,
               reject,
               length: 0,
               body: []
@@ -9678,18 +9678,18 @@ var require_readable = __commonJS({
       return buffer;
     }
     function consumeEnd(consume2) {
-      const { type, body, resolve: resolve13, stream, length } = consume2;
+      const { type, body, resolve: resolve15, stream, length } = consume2;
       try {
         if (type === "text") {
-          resolve13(chunksDecode(body, length));
+          resolve15(chunksDecode(body, length));
         } else if (type === "json") {
-          resolve13(JSON.parse(chunksDecode(body, length)));
+          resolve15(JSON.parse(chunksDecode(body, length)));
         } else if (type === "arrayBuffer") {
-          resolve13(chunksConcat(body, length).buffer);
+          resolve15(chunksConcat(body, length).buffer);
         } else if (type === "blob") {
-          resolve13(new Blob(body, { type: stream[kContentType] }));
+          resolve15(new Blob(body, { type: stream[kContentType] }));
         } else if (type === "bytes") {
-          resolve13(chunksConcat(body, length));
+          resolve15(chunksConcat(body, length));
         }
         consumeFinish(consume2);
       } catch (err) {
@@ -9946,9 +9946,9 @@ var require_api_request = __commonJS({
     };
     function request(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve13, reject) => {
+        return new Promise((resolve15, reject) => {
           request.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve13(data);
+            return err ? reject(err) : resolve15(data);
           });
         });
       }
@@ -10171,9 +10171,9 @@ var require_api_stream = __commonJS({
     };
     function stream(opts, factory, callback) {
       if (callback === void 0) {
-        return new Promise((resolve13, reject) => {
+        return new Promise((resolve15, reject) => {
           stream.call(this, opts, factory, (err, data) => {
-            return err ? reject(err) : resolve13(data);
+            return err ? reject(err) : resolve15(data);
           });
         });
       }
@@ -10458,9 +10458,9 @@ var require_api_upgrade = __commonJS({
     };
     function upgrade(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve13, reject) => {
+        return new Promise((resolve15, reject) => {
           upgrade.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve13(data);
+            return err ? reject(err) : resolve15(data);
           });
         });
       }
@@ -10552,9 +10552,9 @@ var require_api_connect = __commonJS({
     };
     function connect(opts, callback) {
       if (callback === void 0) {
-        return new Promise((resolve13, reject) => {
+        return new Promise((resolve15, reject) => {
           connect.call(this, opts, (err, data) => {
-            return err ? reject(err) : resolve13(data);
+            return err ? reject(err) : resolve15(data);
           });
         });
       }
@@ -14416,7 +14416,7 @@ var require_fetch = __commonJS({
       function dispatch({ body }) {
         const url = requestCurrentURL(request);
         const agent = fetchParams.controller.dispatcher;
-        return new Promise((resolve13, reject) => agent.dispatch(
+        return new Promise((resolve15, reject) => agent.dispatch(
           {
             path: url.pathname + url.search,
             origin: url.origin,
@@ -14492,7 +14492,7 @@ var require_fetch = __commonJS({
                 }
               }
               const onError = this.onError.bind(this);
-              resolve13({
+              resolve15({
                 status,
                 statusText,
                 headersList,
@@ -14538,7 +14538,7 @@ var require_fetch = __commonJS({
               for (let i = 0; i < rawHeaders.length; i += 2) {
                 headersList.append(bufferToLowerCasedHeaderName(rawHeaders[i]), rawHeaders[i + 1].toString("latin1"), true);
               }
-              resolve13({
+              resolve15({
                 status,
                 statusText: STATUS_CODES[status],
                 headersList,
@@ -18269,8 +18269,8 @@ var require_util8 = __commonJS({
       return true;
     }
     function delay(ms) {
-      return new Promise((resolve13) => {
-        setTimeout(resolve13, ms).unref();
+      return new Promise((resolve15) => {
+        setTimeout(resolve15, ms).unref();
       });
     }
     module.exports = {
@@ -19746,13 +19746,13 @@ var require_ignore = __commonJS({
         const rules = this._rules;
         const { length } = rules;
         const shortcut = this._basenameCount * 2 >= length;
-        const basename8 = shortcut ? basenameOf(path10) : path10;
+        const basename11 = shortcut ? basenameOf(path10) : path10;
         for (let index = 0; index < length; index++) {
           const rule = rules[index];
           const { negative } = rule;
           const skip = unignored === negative && ignored !== unignored || negative && !ignored && !unignored && !checkUnignored;
           if (!skip && rule[mode].test(
-            shortcut && rule._basenameOnly ? basename8 : path10
+            shortcut && rule._basenameOnly ? basename11 : path10
           )) {
             ignored = !negative;
             unignored = negative;
@@ -21363,34 +21363,34 @@ var require_yauzl = __commonJS({
     exports.LocalFileHeader = LocalFileHeader;
     exports.RandomAccessReader = RandomAccessReader;
     function openPromise(path10, options2) {
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         open3(path10, { ...options2, lazyEntries: true }, function(err, zipfile) {
           if (err) return reject(err);
-          resolve13(zipfile);
+          resolve15(zipfile);
         });
       });
     }
     function fromFdPromise(fd, options2) {
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         fromFd(fd, { ...options2, lazyEntries: true }, function(err, zipfile) {
           if (err) return reject(err);
-          resolve13(zipfile);
+          resolve15(zipfile);
         });
       });
     }
     function fromBufferPromise(buffer, options2) {
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         fromBuffer(buffer, { ...options2, lazyEntries: true }, function(err, zipfile) {
           if (err) return reject(err);
-          resolve13(zipfile);
+          resolve15(zipfile);
         });
       });
     }
     function fromRandomAccessReaderPromise(reader, totalSize, options2) {
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         fromRandomAccessReader(reader, totalSize, { ...options2, lazyEntries: true }, function(err, zipfile) {
           if (err) return reject(err);
-          resolve13(zipfile);
+          resolve15(zipfile);
         });
       });
     }
@@ -21674,15 +21674,15 @@ var require_yauzl = __commonJS({
         if (self.autoClose) self.close();
       }
       function onEntry(entry) {
-        let { resolve: resolve13 } = pendingResolveReject;
+        let { resolve: resolve15 } = pendingResolveReject;
         pendingResolveReject = null;
-        resolve13({ value: entry });
+        resolve15({ value: entry });
       }
       function onEnd() {
-        let { resolve: resolve13 } = pendingResolveReject;
+        let { resolve: resolve15 } = pendingResolveReject;
         pendingResolveReject = null;
         cleanup();
-        resolve13({ done: true });
+        resolve15({ done: true });
       }
       function onError(err) {
         let { reject } = pendingResolveReject;
@@ -21695,9 +21695,9 @@ var require_yauzl = __commonJS({
           return this;
         },
         next() {
-          const promise = new Promise((resolve13, reject) => {
+          const promise = new Promise((resolve15, reject) => {
             if (pendingResolveReject != null) throw new Error("next() called before previous Promise was resolved.");
-            pendingResolveReject = { resolve: resolve13, reject };
+            pendingResolveReject = { resolve: resolve15, reject };
           });
           self.readEntry();
           return promise;
@@ -21886,26 +21886,26 @@ var require_yauzl = __commonJS({
       });
     };
     ZipFile.prototype.openReadStreamPromise = function(entry, options2) {
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         this.openReadStream(entry, options2, function(err, readStream) {
           if (err) return reject(err);
-          resolve13(readStream);
+          resolve15(readStream);
         });
       });
     };
     ZipFile.prototype.openReadStreamLowLevelPromise = function(fileDataStart, compressedSize, relativeStart, relativeEnd, decompress, uncompressedSize) {
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         this.openReadStream(fileDataStart, compressedSize, relativeStart, relativeEnd, decompress, uncompressedSize, function(err, readStream) {
           if (err) return reject(err);
-          resolve13(readStream);
+          resolve15(readStream);
         });
       });
     };
     ZipFile.prototype.readLocalFileHeaderPromise = function(entry, options2) {
-      return new Promise((resolve13, reject) => {
+      return new Promise((resolve15, reject) => {
         this.readLocalFileHeader(entry, options2, function(err, localFileHeader) {
           if (err) return reject(err);
-          resolve13(localFileHeader);
+          resolve15(localFileHeader);
         });
       });
     };
@@ -23497,11 +23497,11 @@ import { EOL as EOL3 } from "os";
 import { constants, promises } from "fs";
 var __awaiter = function(thisArg, _arguments, P, generator) {
   function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve13) {
-      resolve13(value);
+    return value instanceof P ? value : new P(function(resolve15) {
+      resolve15(value);
     });
   }
-  return new (P || (P = Promise))(function(resolve13, reject) {
+  return new (P || (P = Promise))(function(resolve15, reject) {
     function fulfilled(value) {
       try {
         step(generator.next(value));
@@ -23517,7 +23517,7 @@ var __awaiter = function(thisArg, _arguments, P, generator) {
       }
     }
     function step(result) {
-      result.done ? resolve13(result.value) : adopt(result.value).then(fulfilled, rejected);
+      result.done ? resolve15(result.value) : adopt(result.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -24245,218 +24245,8 @@ function getArtifactSigning(values, paths) {
   return signing;
 }
 
-// ../../js/wp-release/dist/commands/package-source.js
-import { basename as basename3, resolve as resolve4 } from "node:path";
-
-// ../../js/wp-release/dist/file-selection.js
-var import_ignore = __toESM(require_ignore(), 1);
-import { realpath, readdir as readdir2, readFile as readFile4 } from "node:fs/promises";
-import { isAbsolute, join, posix, relative, resolve as resolve2 } from "node:path";
-
-// ../../js/wp-release/dist/git.js
-import { spawn } from "node:child_process";
-function redactUrls(text) {
-  return text.replace(/(\w+:\/\/)[^/@\s]+@/g, "$1***@");
-}
-function parseRepositoryUrl(url) {
-  const scpLike = url.match(/^(?:[^@/:]+@)?([^/:\\]{2,}):(?!\/\/)(.+)$/);
-  const parsed = !scpLike && URL.canParse(url) ? new URL(url) : void 0;
-  const isRemote = ["http:", "https:", "ssh:", "git:"].includes(parsed?.protocol ?? "");
-  const location = scpLike ? { host: scpLike[1] ?? "", path: scpLike[2] ?? "" } : { host: parsed?.host ?? "", path: parsed?.pathname ?? "" };
-  const path10 = location.path.replace(/^\/+|\/+$/g, "").replace(/\.git$/, "");
-  return (scpLike || isRemote) && location.host && path10 ? { host: location.host, path: path10 } : void 0;
-}
-var GitError = class extends Error {
-  name = "GitError";
-  exitCode = 1;
-  stderr;
-  /**
-   * @param message Error message.
-   * @param stderr  Standard error of the command.
-   */
-  constructor(message, stderr = "") {
-    super(redactUrls(message));
-    this.stderr = redactUrls(stderr);
-  }
-};
-function createGitRunner(binary = "git") {
-  return ({ args, cwd, input: input2, env = {} }) => new Promise((resolve13, reject) => {
-    const child = spawn(binary, args, {
-      cwd,
-      env: {
-        ...process.env,
-        LC_ALL: "C",
-        GIT_TERMINAL_PROMPT: "0",
-        ...env
-      },
-      stdio: ["pipe", "pipe", "pipe"]
-    });
-    const output = { stdout: "", stderr: "" };
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (data) => output.stdout += data);
-    child.stderr.on("data", (data) => output.stderr += data);
-    child.on("error", (error) => reject(new GitError(`Can't run ${binary}: ${error.message}. Install git.`)));
-    child.on("close", (code) => {
-      if (0 === code) {
-        resolve13(output);
-      } else {
-        reject(new GitError(`git ${args[0]} failed: ${output.stderr.trim()}`, output.stderr));
-      }
-    });
-    child.stdin.on("error", () => void 0);
-    child.stdin.end(input2 ?? "");
-  });
-}
-
-// ../../js/wp-release/dist/file-selection.js
-var DISTIGNORE_FILENAME = ".distignore";
-var ALWAYS_EXCLUDED = [".git", ".svn", ".hg"];
-function parseExclude(value) {
-  return [value].flat().filter((item) => "string" === typeof item).flatMap((item) => item.split(/[,\n]/)).map((pattern) => pattern.trim()).filter(Boolean);
-}
-function resolveFileSelection(input2) {
-  const { cwd, sourceDir, distignore, exclude, excludeGitattributes = false } = input2;
-  const selection = {
-    distignore: join(sourceDir, DISTIGNORE_FILENAME),
-    distignoreRequired: false,
-    exclude: parseExclude(exclude),
-    sourceDir,
-    excludeGitattributes
-  };
-  if (false === distignore) {
-    selection.distignore = null;
-  }
-  if ("string" === typeof distignore && distignore) {
-    selection.distignore = resolve2(cwd, distignore);
-    selection.distignoreRequired = true;
-  }
-  return selection;
-}
-async function loadFileRules(selection) {
-  const { distignore = null, distignoreRequired = false, exclude = [] } = selection;
-  const rules = (0, import_ignore.default)().add(await readIgnoreFile(distignore, distignoreRequired)).add(exclude);
-  if (selection.excludeGitattributes) {
-    if (!selection.sourceDir) {
-      throw new ValidationError("--exclude-gitattributes requires a source directory.");
-    }
-    const excluded = await getExportIgnoredPaths(selection.sourceDir, rules);
-    rules.add(excluded.map((path10) => `/${escapePattern(path10)}`));
-  }
-  return rules.add(ALWAYS_EXCLUDED);
-}
-async function getExportIgnoredPaths(sourceDir, rules) {
-  const runner = createGitRunner();
-  let root;
-  try {
-    ({ stdout: root } = await runner({
-      args: ["rev-parse", "--show-toplevel"],
-      cwd: sourceDir
-    }));
-  } catch {
-    throw new ValidationError("--exclude-gitattributes requires the source directory to be inside a Git repository.");
-  }
-  root = await realpath(root.trim());
-  const sourceFromRoot = relative(root, await realpath(sourceDir));
-  if (isAbsolute(sourceFromRoot) || sourceFromRoot === ".." || sourceFromRoot.startsWith(`..${posix.sep}`)) {
-    throw new ValidationError("--exclude-gitattributes requires the source directory to be inside a Git repository.");
-  }
-  const candidates = await findAttributeCandidates(sourceDir, "", rules);
-  if (!candidates.length) {
-    return [];
-  }
-  const pathsFromRoot = candidates.map((path10) => posix.join(sourceFromRoot.split("\\").join("/"), path10));
-  const { stdout } = await runner({
-    args: ["check-attr", "-z", "--stdin", "export-ignore"],
-    cwd: root,
-    input: pathsFromRoot.map((path10) => `${path10}\0`).join("")
-  });
-  const fields = stdout.split("\0");
-  const ignored = [];
-  for (let index = 0; index + 2 < fields.length; index += 3) {
-    const candidate = candidates[index / 3];
-    if (fields[index + 2] === "set" && candidate) {
-      ignored.push(candidate);
-    }
-  }
-  return ignored;
-}
-async function findAttributeCandidates(sourceDir, dir, rules) {
-  const entries = await readdir2(join(sourceDir, dir), {
-    withFileTypes: true
-  });
-  const paths = await Promise.all(entries.map(async (entry) => {
-    const path10 = posix.join(dir, entry.name);
-    if (entry.isDirectory() && !rules.ignores(`${path10}/`)) {
-      return findAttributeCandidates(sourceDir, path10, rules);
-    }
-    if ((entry.isFile() || entry.isSymbolicLink()) && !rules.ignores(path10)) {
-      return [path10];
-    }
-    return [];
-  }));
-  return paths.flat();
-}
-function escapePattern(path10) {
-  return path10.replace(/[\\*?[\\]!#]/g, "\\$&");
-}
-async function readIgnoreFile(path10, required) {
-  if (!path10) {
-    return "";
-  }
-  try {
-    return await readFile4(path10, "utf8");
-  } catch (error) {
-    if (!isErrorCode(error, "ENOENT")) {
-      throw error;
-    }
-    if (required) {
-      throw new ValidationError(`Ignore file ${path10} doesn't exist.`);
-    }
-    return "";
-  }
-}
-function isErrorCode(error, code) {
-  return error instanceof Error && "code" in error && code === error.code;
-}
-async function selectFiles(sourceDir, rules) {
-  const files = await findFiles(sourceDir, "", rules);
-  return files.sort();
-}
-async function findFiles(sourceDir, dir, rules) {
-  const entries = await readdir2(join(sourceDir, dir), {
-    withFileTypes: true
-  });
-  const files = await Promise.all(entries.map((entry) => findEntryFiles(sourceDir, posix.join(dir, entry.name), entry, rules)));
-  return files.flat();
-}
-async function findEntryFiles(sourceDir, path10, entry, rules) {
-  if (entry.isDirectory() && !rules.ignores(`${path10}/`)) {
-    return findFiles(sourceDir, path10, rules);
-  }
-  if (entry.isFile() && !rules.ignores(path10)) {
-    return [path10];
-  }
-  if (entry.isSymbolicLink() && !rules.ignores(path10)) {
-    throw new ValidationError(`${path10} is a symbolic link, which isn't supported. Exclude it or replace it with the file.`);
-  }
-  return [];
-}
-function ignoreOwnFile(rules, sourceDir, path10) {
-  const relativePath = relative(sourceDir, path10).split("\\").join("/");
-  const isInside = relativePath && ".." !== relativePath && !relativePath.startsWith("../") && !isAbsolute(relativePath);
-  if (isInside) {
-    rules.add(`/${relativePath.replace(/[\\*?[\]!#]/g, "\\$&")}`);
-  }
-  return rules;
-}
-function ignoreOwnSignature(rules, sourceDir, path10) {
-  return Object.values(SIGNATURE_FORMATS).reduce((matcher, { extension }) => ignoreOwnFile(matcher, sourceDir, path10 + extension), rules);
-}
-
-// ../../js/wp-release/dist/package-deploy.js
-import { realpath as realpath2 } from "node:fs/promises";
-import path5 from "node:path";
+// ../../js/wp-release/dist/commands/zip.js
+import { basename as basename6, dirname as dirname3, resolve as resolve7, sep as sep2 } from "node:path";
 
 // ../../js/wp-release/dist/changeset-config.js
 import { access as access2 } from "node:fs/promises";
@@ -24711,15 +24501,426 @@ function validateVersionDescriptor(descriptor, location, isTarget) {
   }
 }
 
+// ../../js/wp-release/dist/integrity.js
+import { readFile as readFile6 } from "node:fs/promises";
+import { basename as basename2 } from "node:path";
+
+// ../../js/wp-release/dist/checksums.js
+import { createReadStream as createReadStream2 } from "node:fs";
+import { mkdir as mkdir2, readFile as readFile5, writeFile as writeFile3 } from "node:fs/promises";
+import { createHash as createHash3 } from "node:crypto";
+import { dirname, join as join2 } from "node:path";
+
+// ../../js/wp-release/dist/file-selection.js
+var import_ignore = __toESM(require_ignore(), 1);
+import { realpath, readdir as readdir2, readFile as readFile4 } from "node:fs/promises";
+import { isAbsolute, join, posix, relative, resolve as resolve2 } from "node:path";
+
+// ../../js/wp-release/dist/git.js
+import { spawn } from "node:child_process";
+function redactUrls(text) {
+  return text.replace(/(\w+:\/\/)[^/@\s]+@/g, "$1***@");
+}
+function parseRepositoryUrl(url) {
+  const scpLike = url.match(/^(?:[^@/:]+@)?([^/:\\]{2,}):(?!\/\/)(.+)$/);
+  const parsed = !scpLike && URL.canParse(url) ? new URL(url) : void 0;
+  const isRemote = ["http:", "https:", "ssh:", "git:"].includes(parsed?.protocol ?? "");
+  const location = scpLike ? { host: scpLike[1] ?? "", path: scpLike[2] ?? "" } : { host: parsed?.host ?? "", path: parsed?.pathname ?? "" };
+  const path10 = location.path.replace(/^\/+|\/+$/g, "").replace(/\.git$/, "");
+  return (scpLike || isRemote) && location.host && path10 ? { host: location.host, path: path10 } : void 0;
+}
+var GitError = class extends Error {
+  name = "GitError";
+  exitCode = 1;
+  stderr;
+  /**
+   * @param message Error message.
+   * @param stderr  Standard error of the command.
+   */
+  constructor(message, stderr = "") {
+    super(redactUrls(message));
+    this.stderr = redactUrls(stderr);
+  }
+};
+function createGitRunner(binary = "git") {
+  return ({ args, cwd, input: input2, env = {} }) => new Promise((resolve15, reject) => {
+    const child = spawn(binary, args, {
+      cwd,
+      env: {
+        ...process.env,
+        LC_ALL: "C",
+        GIT_TERMINAL_PROMPT: "0",
+        ...env
+      },
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    const output = { stdout: "", stderr: "" };
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (data) => output.stdout += data);
+    child.stderr.on("data", (data) => output.stderr += data);
+    child.on("error", (error) => reject(new GitError(`Can't run ${binary}: ${error.message}. Install git.`)));
+    child.on("close", (code) => {
+      if (0 === code) {
+        resolve15(output);
+      } else {
+        reject(new GitError(`git ${args[0]} failed: ${output.stderr.trim()}`, output.stderr));
+      }
+    });
+    child.stdin.on("error", () => void 0);
+    child.stdin.end(input2 ?? "");
+  });
+}
+
+// ../../js/wp-release/dist/file-selection.js
+var DISTIGNORE_FILENAME = ".distignore";
+var ALWAYS_EXCLUDED = [".git", ".svn", ".hg"];
+function parseExclude(value) {
+  return [value].flat().filter((item) => "string" === typeof item).flatMap((item) => item.split(/[,\n]/)).map((pattern) => pattern.trim()).filter(Boolean);
+}
+function resolveFileSelection(input2) {
+  const { cwd, sourceDir, distignore, exclude, excludeGitattributes = false } = input2;
+  const selection = {
+    distignore: join(sourceDir, DISTIGNORE_FILENAME),
+    distignoreRequired: false,
+    exclude: parseExclude(exclude),
+    sourceDir,
+    excludeGitattributes
+  };
+  if (false === distignore) {
+    selection.distignore = null;
+  }
+  if ("string" === typeof distignore && distignore) {
+    selection.distignore = resolve2(cwd, distignore);
+    selection.distignoreRequired = true;
+  }
+  return selection;
+}
+async function loadFileRules(selection) {
+  const { distignore = null, distignoreRequired = false, exclude = [] } = selection;
+  const rules = (0, import_ignore.default)().add(await readIgnoreFile(distignore, distignoreRequired)).add(exclude);
+  if (selection.excludeGitattributes) {
+    if (!selection.sourceDir) {
+      throw new ValidationError("--exclude-gitattributes requires a source directory.");
+    }
+    const excluded = await getExportIgnoredPaths(selection.sourceDir, rules);
+    rules.add(excluded.map((path10) => `/${escapePattern(path10)}`));
+  }
+  return rules.add(ALWAYS_EXCLUDED);
+}
+async function getExportIgnoredPaths(sourceDir, rules) {
+  const runner = createGitRunner();
+  let root;
+  try {
+    ({ stdout: root } = await runner({
+      args: ["rev-parse", "--show-toplevel"],
+      cwd: sourceDir
+    }));
+  } catch {
+    throw new ValidationError("--exclude-gitattributes requires the source directory to be inside a Git repository.");
+  }
+  root = await realpath(root.trim());
+  const sourceFromRoot = relative(root, await realpath(sourceDir));
+  if (isAbsolute(sourceFromRoot) || sourceFromRoot === ".." || sourceFromRoot.startsWith(`..${posix.sep}`)) {
+    throw new ValidationError("--exclude-gitattributes requires the source directory to be inside a Git repository.");
+  }
+  const candidates = await findAttributeCandidates(sourceDir, "", rules);
+  if (!candidates.length) {
+    return [];
+  }
+  const pathsFromRoot = candidates.map((path10) => posix.join(sourceFromRoot.split("\\").join("/"), path10));
+  const { stdout } = await runner({
+    args: ["check-attr", "-z", "--stdin", "export-ignore"],
+    cwd: root,
+    input: pathsFromRoot.map((path10) => `${path10}\0`).join("")
+  });
+  const fields = stdout.split("\0");
+  const ignored = [];
+  for (let index = 0; index + 2 < fields.length; index += 3) {
+    const candidate = candidates[index / 3];
+    if (fields[index + 2] === "set" && candidate) {
+      ignored.push(candidate);
+    }
+  }
+  return ignored;
+}
+async function findAttributeCandidates(sourceDir, dir, rules) {
+  const entries = await readdir2(join(sourceDir, dir), {
+    withFileTypes: true
+  });
+  const paths = await Promise.all(entries.map(async (entry) => {
+    const path10 = posix.join(dir, entry.name);
+    if (entry.isDirectory() && !rules.ignores(`${path10}/`)) {
+      return findAttributeCandidates(sourceDir, path10, rules);
+    }
+    if ((entry.isFile() || entry.isSymbolicLink()) && !rules.ignores(path10)) {
+      return [path10];
+    }
+    return [];
+  }));
+  return paths.flat();
+}
+function escapePattern(path10) {
+  return path10.replace(/[\\*?[\\]!#]/g, "\\$&");
+}
+async function readIgnoreFile(path10, required) {
+  if (!path10) {
+    return "";
+  }
+  try {
+    return await readFile4(path10, "utf8");
+  } catch (error) {
+    if (!isErrorCode(error, "ENOENT")) {
+      throw error;
+    }
+    if (required) {
+      throw new ValidationError(`Ignore file ${path10} doesn't exist.`);
+    }
+    return "";
+  }
+}
+function isErrorCode(error, code) {
+  return error instanceof Error && "code" in error && code === error.code;
+}
+async function selectFiles(sourceDir, rules) {
+  const files = await findFiles(sourceDir, "", rules);
+  return files.sort();
+}
+async function findFiles(sourceDir, dir, rules) {
+  const entries = await readdir2(join(sourceDir, dir), {
+    withFileTypes: true
+  });
+  const files = await Promise.all(entries.map((entry) => findEntryFiles(sourceDir, posix.join(dir, entry.name), entry, rules)));
+  return files.flat();
+}
+async function findEntryFiles(sourceDir, path10, entry, rules) {
+  if (entry.isDirectory() && !rules.ignores(`${path10}/`)) {
+    return findFiles(sourceDir, path10, rules);
+  }
+  if (entry.isFile() && !rules.ignores(path10)) {
+    return [path10];
+  }
+  if (entry.isSymbolicLink() && !rules.ignores(path10)) {
+    throw new ValidationError(`${path10} is a symbolic link, which isn't supported. Exclude it or replace it with the file.`);
+  }
+  return [];
+}
+function ignoreOwnFile(rules, sourceDir, path10) {
+  const relativePath = relative(sourceDir, path10).split("\\").join("/");
+  const isInside = relativePath && ".." !== relativePath && !relativePath.startsWith("../") && !isAbsolute(relativePath);
+  if (isInside) {
+    rules.add(`/${relativePath.replace(/[\\*?[\]!#]/g, "\\$&")}`);
+  }
+  return rules;
+}
+function ignoreOwnSignature(rules, sourceDir, path10) {
+  return Object.values(SIGNATURE_FORMATS).reduce((matcher, { extension }) => ignoreOwnFile(matcher, sourceDir, path10 + extension), rules);
+}
+
+// ../../js/wp-release/dist/checksums.js
+var CHECKSUMS_EXTENSION = ".checksums.json";
+var CHECKSUM_ALGORITHMS = ["md5", "sha256"];
+var PACKAGE_TYPES = ["plugin", "theme"];
+async function hashFile(path10) {
+  const md5 = createHash3("md5");
+  const sha256 = createHash3("sha256");
+  for await (const chunk of createReadStream2(path10)) {
+    md5.update(chunk);
+    sha256.update(chunk);
+  }
+  return { md5: md5.digest("hex"), sha256: sha256.digest("hex") };
+}
+async function hashFiles(sourceDir, files) {
+  const hashes = {};
+  for (const file of files) {
+    hashes[file] = await hashFile(join2(sourceDir, file));
+  }
+  return hashes;
+}
+async function createChecksums(input2) {
+  const { sourceDir, rules, slug, version = null, type = "plugin" } = input2;
+  if (!isPackageType(type)) {
+    throw new ValidationError(`Unknown type "${type}", use ${PACKAGE_TYPES.join(" or ")}.`);
+  }
+  const files = await selectFiles(sourceDir, rules);
+  return {
+    ..."theme" === type ? { theme: slug } : { plugin: slug },
+    ...version ? { version } : {},
+    files: await hashFiles(sourceDir, files)
+  };
+}
+function isPackageType(type) {
+  return PACKAGE_TYPES.includes(type);
+}
+async function writeChecksums(path10, manifest, force = false) {
+  await mkdir2(dirname(path10), { recursive: true });
+  try {
+    await writeFile3(path10, JSON.stringify(manifest, null, "	") + "\n", {
+      flag: force ? "w" : "wx"
+    });
+  } catch (error) {
+    if (isErrorCode(error, "EEXIST")) {
+      throw new ValidationError(`${path10} already exists, pass --force to overwrite it.`);
+    }
+    throw error;
+  }
+}
+async function readChecksums(path10) {
+  const contents = await readFile5(path10, "utf8").catch((error) => {
+    throw isErrorCode(error, "ENOENT") ? new ValidationError(`Checksums file ${path10} doesn't exist.`) : error;
+  });
+  return parseChecksums(contents, path10);
+}
+function parseChecksums(contents, source = "checksums") {
+  const manifest = parseJson(contents, source);
+  const files = isRecord(manifest) ? manifest.files : void 0;
+  if (!isRecord(manifest) || !isRecord(files)) {
+    throw new ValidationError(`${source} has no "files" object.`);
+  }
+  const invalidPaths = Object.keys(files).filter((path10) => !isValidPath(path10));
+  const invalidHashes = Object.entries(files).filter(([, hashes]) => !isValidEntry(hashes)).map(([path10]) => path10);
+  if (invalidPaths.length) {
+    throw new ValidationError(`${source} has paths outside the package folder: ${invalidPaths.join(", ")}.`);
+  }
+  if (invalidHashes.length) {
+    throw new ValidationError(`${source} has no md5 or sha256 hash for ${invalidHashes.join(", ")}.`);
+  }
+  return manifest;
+}
+function isRecord(value) {
+  return Boolean(value) && "object" === typeof value && !Array.isArray(value);
+}
+function isValidPath(path10) {
+  const segments = path10.split("/");
+  return !path10.includes("\\") && segments.every((segment) => segment && "." !== segment && ".." !== segment);
+}
+function parseJson(contents, source) {
+  try {
+    return JSON.parse(contents);
+  } catch (error) {
+    throw new ValidationError(`${source} isn't valid JSON: ${error.message}`);
+  }
+}
+function isValidEntry(hashes) {
+  return isRecord(hashes) && CHECKSUM_ALGORITHMS.some((algorithm) => [hashes[algorithm]].flat().some((hash) => "string" === typeof hash && hash.length > 0));
+}
+function compareChecksums(expected, actual) {
+  const expectedPaths = Object.keys(expected).sort();
+  const present = expectedPaths.filter((path10) => Object.hasOwn(actual, path10));
+  const isMatch = (path10) => matchesChecksum(expected[path10], actual[path10]);
+  const changed = present.filter((path10) => !isMatch(path10));
+  const missing = expectedPaths.filter((path10) => !Object.hasOwn(actual, path10));
+  const extra = Object.keys(actual).filter((path10) => !Object.hasOwn(expected, path10)).sort();
+  return {
+    valid: 0 === changed.length + missing.length + extra.length,
+    matched: present.filter(isMatch),
+    changed,
+    missing,
+    extra
+  };
+}
+function matchesChecksum(expected, actual) {
+  const algorithm = expected?.sha256 ? "sha256" : "md5";
+  return [expected?.[algorithm]].flat().map((hash) => String(hash).toLowerCase()).includes(actual?.[algorithm] ?? "");
+}
+async function verifyChecksums(input2) {
+  const { sourceDir, manifest, rules } = input2;
+  const expected = Object.fromEntries(Object.entries(manifest.files).filter(([path10]) => !rules.ignores(path10)));
+  const files = await selectFiles(sourceDir, rules);
+  return compareChecksums(expected, await hashFiles(sourceDir, files));
+}
+
+// ../../js/wp-release/dist/integrity.js
+var wordpressCodec = {
+  id: "wordpress-json",
+  filename: "checksums.json",
+  encode: (manifest) => Buffer.from(JSON.stringify(manifest, null, "	") + "\n"),
+  decode: (bytes) => parseChecksums(Buffer.from(bytes).toString("utf8"))
+};
+var sha256sumCodec = {
+  id: "sha256sum",
+  filename: "SHA256SUMS",
+  encode(manifest) {
+    const lines = Object.entries(manifest.files).sort().map(([path10, hashes]) => {
+      if ("string" !== typeof hashes.sha256) {
+        throw new ValidationError("sha256sum requires one SHA-256 digest per file.");
+      }
+      const escaped = /[\\\n\r]/.test(path10);
+      const name = path10.replaceAll("\\", "\\\\").replaceAll("\n", "\\n").replaceAll("\r", "\\r");
+      return `${escaped ? "\\" : ""}${hashes.sha256}  ${name}`;
+    });
+    return Buffer.from(lines.join("\n") + "\n");
+  },
+  decode(bytes) {
+    const files = /* @__PURE__ */ Object.create(null);
+    for (const line of Buffer.from(bytes).toString("utf8").split("\n").filter(Boolean)) {
+      const match = /^(\\?)([a-fA-F0-9]{64}) [ *](.+)$/.exec(line);
+      if (!match) {
+        throw new ValidationError("Invalid SHA256SUMS entry.");
+      }
+      const path10 = match[1] ? (match[3] ?? "").replace(/\\([\\nr])/g, (_, char) => ({ n: "\n", r: "\r", "\\": "\\" })[char] ?? "") : match[3] ?? "";
+      if (Object.hasOwn(files, path10)) {
+        throw new ValidationError(`Duplicate checksum path: ${path10}`);
+      }
+      files[path10] = { sha256: (match[2] ?? "").toLowerCase() };
+    }
+    return parseChecksums(JSON.stringify({ files }));
+  }
+};
+function resolveManifestCodec(value = "wordpress-json") {
+  if (typeof value === "string") {
+    if (!["wordpress-json", "sha256sum"].includes(value)) {
+      throw new ValidationError(`Unknown checksums format: ${value}.`);
+    }
+    return value === "sha256sum" ? sha256sumCodec : wordpressCodec;
+  }
+  if (!value || typeof value.encode !== "function" || typeof value.decode !== "function" || !value.id || !value.filename) {
+    throw new ValidationError("A checksums codec needs id, filename, encode and decode.");
+  }
+  return value;
+}
+function checkChecksumsFile(file) {
+  if (!file || /[\\\x00-\x1f:]/.test(file) || file.split("/").some((part) => !part || part === "." || part === "..")) {
+    throw new ValidationError("--checksums-file must be a relative file path with forward slashes and no dot segments.");
+  }
+  return file;
+}
+async function readIntegrity(path10, codec) {
+  const selected = resolveManifestCodec(codec ?? (basename2(path10) === "SHA256SUMS" ? "sha256sum" : "wordpress-json"));
+  const manifest = selected === wordpressCodec ? await readChecksums(path10) : await selected.decode(await readFile6(path10));
+  return parseChecksums(JSON.stringify(manifest), path10);
+}
+async function encodeIntegrity(codec, manifest) {
+  const bytes = Buffer.from(await codec.encode(manifest));
+  const decoded = parseChecksums(JSON.stringify(await codec.decode(bytes)));
+  const expected = Object.keys(manifest.files);
+  const actual = Object.keys(decoded.files);
+  const preserved = expected.length === actual.length && actual.every((path10) => {
+    const hashes = decoded.files[path10];
+    return Boolean(manifest.files[path10]) && Object.entries(hashes ?? {}).every(([algorithm, digest]) => digest === manifest.files[path10]?.[algorithm]);
+  });
+  if (!preserved || ["plugin", "theme", "version"].some((key) => decoded[key] !== void 0 && decoded[key] !== manifest[key])) {
+    throw new ValidationError("The checksums codec must preserve payload paths, digests and any represented package identity.");
+  }
+  return bytes;
+}
+
+// ../../js/wp-release/dist/commands/package-source.js
+import { basename as basename4, resolve as resolve4 } from "node:path";
+
+// ../../js/wp-release/dist/package-deploy.js
+import { realpath as realpath2 } from "node:fs/promises";
+import path5 from "node:path";
+
 // ../../js/wp-release/dist/changeset-packages.js
 import { readdir as readdir4 } from "node:fs/promises";
 import path3 from "node:path";
 
 // ../../js/wp-release/dist/json-files.js
-import { readFile as readFile5 } from "node:fs/promises";
+import { readFile as readFile7 } from "node:fs/promises";
 async function readJson(file) {
   try {
-    return JSON.parse(await readFile5(file, "utf8"));
+    return JSON.parse(await readFile7(file, "utf8"));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new ValidationError(`Could not read JSON manifest ${file}: ${message}`);
@@ -24727,7 +24928,7 @@ async function readJson(file) {
 }
 async function readJsonIfExists(file) {
   try {
-    return JSON.parse(await readFile5(file, "utf8"));
+    return JSON.parse(await readFile7(file, "utf8"));
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -24737,12 +24938,12 @@ async function readJsonIfExists(file) {
 }
 
 // ../../js/wp-release/dist/version-files.js
-import { access as access3, readFile as readFile8, writeFile as writeFile3 } from "node:fs/promises";
+import { access as access3, readFile as readFile10, writeFile as writeFile4 } from "node:fs/promises";
 import path2 from "node:path";
 
 // ../../js/wp-release/dist/package-meta.js
-import { open as open2, readdir as readdir3, readFile as readFile6 } from "node:fs/promises";
-import { join as join2 } from "node:path";
+import { open as open2, readdir as readdir3, readFile as readFile8 } from "node:fs/promises";
+import { join as join3 } from "node:path";
 
 // ../../js/wp-release/dist/regexp.js
 function escapeRegExp(text) {
@@ -24868,7 +25069,7 @@ async function findMainPluginFile(input2) {
   const entries = await readdir3(dir, { withFileTypes: true });
   const phpFiles = entries.filter((entry) => entry.isFile() && entry.name.endsWith(".php")).map((entry) => entry.name).sort();
   const candidates = await Promise.all(phpFiles.map(async (file) => {
-    const contents = await readFileStart(join2(dir, file));
+    const contents = await readFileStart(join3(dir, file));
     const headers = parseFileHeaders({
       contents: contents ?? "",
       headers: ["Plugin Name"]
@@ -24884,7 +25085,7 @@ async function readPackageMeta(input2) {
   const mainFile = pluginFile ?? "style.css";
   const type = pluginFile ? "plugin" : "theme";
   const headers = parseFileHeaders({
-    contents: await readFileStart(join2(dir, mainFile)) ?? "",
+    contents: await readFileStart(join3(dir, mainFile)) ?? "",
     headers: pluginFile ? PLUGIN_HEADERS : THEME_HEADERS
   });
   if (pluginFile || headers["Theme Name"]) {
@@ -24902,7 +25103,7 @@ async function readReadme(dir, name) {
   const names = name ? [name] : README_FILENAMES;
   const readmes = await Promise.all(names.map(async (file) => ({
     file,
-    contents: await readFile6(join2(dir, file), "utf8").catch((error) => {
+    contents: await readFile8(join3(dir, file), "utf8").catch((error) => {
       if (isErrorCode(error, "ENOENT")) {
         return null;
       }
@@ -24930,12 +25131,12 @@ function formatTag(format, pkg, version) {
 
 // ../../js/wp-release/dist/version-check.js
 var import_ignore2 = __toESM(require_ignore(), 1);
-import { readFile as readFile7 } from "node:fs/promises";
-import { join as join3 } from "node:path";
+import { readFile as readFile9 } from "node:fs/promises";
+import { join as join4 } from "node:path";
 
 // ../../js/wp-release/dist/deploy-options.js
 import { existsSync as existsSync3 } from "node:fs";
-import { basename as basename2, resolve as resolve3 } from "node:path";
+import { basename as basename3, resolve as resolve3 } from "node:path";
 var SVN_URL = "https://plugins.svn.wordpress.org/{slug}/";
 function isPrerelease(version) {
   return /^[^-+]+-/.test(version);
@@ -24999,7 +25200,7 @@ function getDeployOptionWarnings(options2) {
 }
 function resolveDeployOptions(input2 = {}) {
   const cwd = resolve3(input2.cwd ?? process.cwd());
-  const slug = input2.slug || basename2(cwd);
+  const slug = input2.slug || basename3(cwd);
   const svnTag = input2.svnTag ? normalizeTag(input2.svnTag) : null;
   const sourceDir = resolve3(cwd, input2.sourceDir || ".");
   const assetsDir = input2.assetsDir ? resolve3(cwd, input2.assetsDir) : null;
@@ -25043,7 +25244,7 @@ var CONSTANT_SEARCH_IGNORE = ["node_modules/", "vendor/", ".*"];
 function getVersionMismatchProblems(sourceDir, mismatches) {
   return mismatches.map(({ message, file, line }) => ({
     message,
-    file: file ? join3(sourceDir, file) : null,
+    file: file ? join4(sourceDir, file) : null,
     line,
     title: "Version mismatch"
   }));
@@ -25105,7 +25306,7 @@ async function compareConstants(sourceDir, constants3, expected) {
   const files = constants3.length ? await selectFiles(sourceDir, (0, import_ignore2.default)().add(CONSTANT_SEARCH_IGNORE)) : [];
   const sources = await Promise.all(files.filter((file) => file.endsWith(".php")).map(async (file) => ({
     file,
-    contents: await readFile7(join3(sourceDir, file), "utf8")
+    contents: await readFile9(join4(sourceDir, file), "utf8")
   })));
   return constants3.flatMap((name) => {
     const source = `Constant ${name}`;
@@ -25161,7 +25362,7 @@ async function findVersionMismatches(input2) {
     compareVersion({
       source: "Version header",
       file: meta.mainFile,
-      line: findFileHeaderLine(await readFileStart(join3(sourceDir, meta.mainFile)) ?? "", "Version"),
+      line: findFileHeaderLine(await readFileStart(join4(sourceDir, meta.mainFile)) ?? "", "Version"),
       actual: meta.version
     }, expected),
     checkStableTag && !readme ? {
@@ -25174,7 +25375,7 @@ async function findVersionMismatches(input2) {
     checkStableTag && readme ? compareVersion({
       source: "Stable tag",
       file: readme.file,
-      line: findReadmeHeaderLine(await readFile7(join3(sourceDir, readme.file), "utf8"), "Stable tag"),
+      line: findReadmeHeaderLine(await readFile9(join4(sourceDir, readme.file), "utf8"), "Stable tag"),
       actual: readme.headers["Stable tag"] ?? null
     }, expected) : null,
     ...await compareConstants(sourceDir, constants3, expected),
@@ -25294,7 +25495,7 @@ async function readVersion(repository, directory, descriptor, pkg) {
   }
   if ("php-constant" === descriptor.kind) {
     const file2 = path2.join(directory, descriptor.file);
-    const contents2 = await readFile8(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const versions = findConstantValues(contents2, descriptor.constant);
     if (versions[0]) {
       return versions[0];
@@ -25302,7 +25503,7 @@ async function readVersion(repository, directory, descriptor, pkg) {
     throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
   }
   const file = path2.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile8(file, "utf8");
+  const contents = await readFile10(file, "utf8");
   const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
   const match = new RegExp(`^\\s*\\*?\\s*${label}:\\s*([^\\r\\n]+)`, "im").exec(contents);
   if (!match) {
@@ -25313,20 +25514,20 @@ async function readVersion(repository, directory, descriptor, pkg) {
 async function writeVersion(directory, descriptor, version, journal) {
   if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
     const file2 = path2.join(directory, descriptor.file);
-    const contents2 = await readFile8(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const manifest = JSON.parse(contents2);
     if ("composer-json" === descriptor.kind && descriptor.ifPresent && !Object.hasOwn(manifest, descriptor.field)) {
       return;
     }
     manifest[descriptor.field] = version;
     await journal.remember(file2);
-    await writeFile3(file2, `${JSON.stringify(manifest, null, "	")}
+    await writeFile4(file2, `${JSON.stringify(manifest, null, "	")}
 `);
     return;
   }
   if ("php-constant" === descriptor.kind) {
     const file2 = path2.join(directory, descriptor.file);
-    const contents2 = await readFile8(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const constant = escapeRegExp(descriptor.constant);
     const definePattern = new RegExp(`(\\bdefine\\s*\\(\\s*(['"])${constant}\\2\\s*,\\s*)(['"])(.*?)\\3`, "g");
     const declarationPattern = new RegExp(`(\\bconst\\s+${constant}\\s*=\\s*)(['"])(.*?)\\2`, "g");
@@ -25335,21 +25536,21 @@ async function writeVersion(directory, descriptor, version, journal) {
       throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
     }
     await journal.remember(file2);
-    await writeFile3(file2, updated);
+    await writeFile4(file2, updated);
     return;
   }
   if ("wordpress-stable-tag" === descriptor.kind && (isPrerelease2(version) || descriptor.ifPresent && !await versionFileExists(directory, descriptor.kind, descriptor.file))) {
     return;
   }
   const file = path2.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile8(file, "utf8");
+  const contents = await readFile10(file, "utf8");
   const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
   const expression = new RegExp(`(^\\s*\\*?\\s*${label}:\\s*)[^\\r\\n]+`, "im");
   if (!expression.test(contents)) {
     throw new ValidationError(`Missing ${label} header in ${file}.`);
   }
   await journal.remember(file);
-  await writeFile3(file, contents.replace(expression, `$1${version}`));
+  await writeFile4(file, contents.replace(expression, `$1${version}`));
 }
 async function verifyVersionTargets(repository, pkg, expected) {
   for (const target of pkg.versionConfig.to) {
@@ -25975,7 +26176,7 @@ async function getDirectorySource(values, positionals, cwd) {
     cwd,
     sourceDir,
     ...getFileSelectionInput(values)
-  }), basename3(cwd));
+  }), basename4(cwd));
 }
 async function getPackageSource(values, cwd, name, configFile) {
   const pkg = await getPackageFiles({
@@ -25987,7 +26188,7 @@ async function getPackageSource(values, cwd, name, configFile) {
     cwd,
     sourceDir: pkg.directory,
     ...pkg.files
-  }), basename3(pkg.directory));
+  }), basename4(pkg.directory));
   return { ...source, package: pkg.name };
 }
 
@@ -26004,122 +26205,10 @@ function formatFilename(format, values) {
   return format.replaceAll("{slug}", slug).replaceAll("{version}", version ?? "");
 }
 
-// ../../js/wp-release/dist/checksums.js
-import { createReadStream as createReadStream2 } from "node:fs";
-import { mkdir as mkdir2, readFile as readFile9, writeFile as writeFile4 } from "node:fs/promises";
-import { createHash as createHash3 } from "node:crypto";
-import { dirname, join as join4 } from "node:path";
-var CHECKSUMS_EXTENSION = ".checksums.json";
-var CHECKSUM_ALGORITHMS = ["md5", "sha256"];
-var PACKAGE_TYPES = ["plugin", "theme"];
-async function hashFile(path10) {
-  const md5 = createHash3("md5");
-  const sha256 = createHash3("sha256");
-  for await (const chunk of createReadStream2(path10)) {
-    md5.update(chunk);
-    sha256.update(chunk);
-  }
-  return { md5: md5.digest("hex"), sha256: sha256.digest("hex") };
-}
-async function hashFiles(sourceDir, files) {
-  const hashes = {};
-  for (const file of files) {
-    hashes[file] = await hashFile(join4(sourceDir, file));
-  }
-  return hashes;
-}
-async function createChecksums(input2) {
-  const { sourceDir, rules, slug, version = null, type = "plugin" } = input2;
-  if (!isPackageType(type)) {
-    throw new ValidationError(`Unknown type "${type}", use ${PACKAGE_TYPES.join(" or ")}.`);
-  }
-  const files = await selectFiles(sourceDir, rules);
-  return {
-    ..."theme" === type ? { theme: slug } : { plugin: slug },
-    ...version ? { version } : {},
-    files: await hashFiles(sourceDir, files)
-  };
-}
-function isPackageType(type) {
-  return PACKAGE_TYPES.includes(type);
-}
-async function writeChecksums(path10, manifest, force = false) {
-  await mkdir2(dirname(path10), { recursive: true });
-  try {
-    await writeFile4(path10, JSON.stringify(manifest, null, "	") + "\n", {
-      flag: force ? "w" : "wx"
-    });
-  } catch (error) {
-    if (isErrorCode(error, "EEXIST")) {
-      throw new ValidationError(`${path10} already exists, pass --force to overwrite it.`);
-    }
-    throw error;
-  }
-}
-async function readChecksums(path10) {
-  const contents = await readFile9(path10, "utf8").catch((error) => {
-    throw isErrorCode(error, "ENOENT") ? new ValidationError(`Checksums file ${path10} doesn't exist.`) : error;
-  });
-  return parseChecksums(contents, path10);
-}
-function parseChecksums(contents, source = "checksums") {
-  const manifest = parseJson(contents, source);
-  const files = isRecord(manifest) ? manifest.files : void 0;
-  if (!isRecord(manifest) || !isRecord(files)) {
-    throw new ValidationError(`${source} has no "files" object.`);
-  }
-  const invalidPaths = Object.keys(files).filter((path10) => !isValidPath(path10));
-  const invalidHashes = Object.entries(files).filter(([, hashes]) => !isValidEntry(hashes)).map(([path10]) => path10);
-  if (invalidPaths.length) {
-    throw new ValidationError(`${source} has paths outside the package folder: ${invalidPaths.join(", ")}.`);
-  }
-  if (invalidHashes.length) {
-    throw new ValidationError(`${source} has no md5 or sha256 hash for ${invalidHashes.join(", ")}.`);
-  }
-  return manifest;
-}
-function isRecord(value) {
-  return Boolean(value) && "object" === typeof value && !Array.isArray(value);
-}
-function isValidPath(path10) {
-  const segments = path10.split("/");
-  return !path10.includes("\\") && segments.every((segment) => segment && "." !== segment && ".." !== segment);
-}
-function parseJson(contents, source) {
-  try {
-    return JSON.parse(contents);
-  } catch (error) {
-    throw new ValidationError(`${source} isn't valid JSON: ${error.message}`);
-  }
-}
-function isValidEntry(hashes) {
-  return isRecord(hashes) && CHECKSUM_ALGORITHMS.some((algorithm) => [hashes[algorithm]].flat().some((hash) => "string" === typeof hash && hash.length > 0));
-}
-function compareChecksums(expected, actual) {
-  const expectedPaths = Object.keys(expected).sort();
-  const present = expectedPaths.filter((path10) => Object.hasOwn(actual, path10));
-  const isMatch = (path10) => matchesChecksum(expected[path10], actual[path10]);
-  const changed = present.filter((path10) => !isMatch(path10));
-  const missing = expectedPaths.filter((path10) => !Object.hasOwn(actual, path10));
-  const extra = Object.keys(actual).filter((path10) => !Object.hasOwn(expected, path10)).sort();
-  return {
-    valid: 0 === changed.length + missing.length + extra.length,
-    matched: present.filter(isMatch),
-    changed,
-    missing,
-    extra
-  };
-}
-function matchesChecksum(expected, actual) {
-  const algorithm = expected?.sha256 ? "sha256" : "md5";
-  return [expected?.[algorithm]].flat().map((hash) => String(hash).toLowerCase()).includes(actual?.[algorithm] ?? "");
-}
-async function verifyChecksums(input2) {
-  const { sourceDir, manifest, rules } = input2;
-  const expected = Object.fromEntries(Object.entries(manifest.files).filter(([path10]) => !rules.ignores(path10)));
-  const files = await selectFiles(sourceDir, rules);
-  return compareChecksums(expected, await hashFiles(sourceDir, files));
-}
+// ../../js/wp-release/dist/package-zip.js
+import { mkdir as mkdir3, mkdtemp, readFile as readFile11, rm as rm3, writeFile as writeFile5 } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename as basename5, dirname as dirname2, join as join6, resolve as resolve5 } from "node:path";
 
 // ../../js/wp-release/dist/output-files.js
 import { lstatSync } from "node:fs";
@@ -26171,11 +26260,20 @@ async function createZip(input2) {
   }
   const zip = new import_yazl.default.ZipFile();
   const output = createWriteStream(zipPath, { flags: force ? "w" : "wx" });
-  [...files].sort().forEach((file) => zip.addFile(join5(sourceDir, file), rootFolder ? posix2.join(rootFolder, file) : file, {
-    mtime: ZIP_MTIME,
-    mode: ZIP_FILE_MODE,
-    forceDosTimestamp: true
-  }));
+  const entries = input2.entries ?? {};
+  [...files, ...Object.keys(entries)].sort().forEach((file) => {
+    const path10 = rootFolder ? posix2.join(rootFolder, file) : file;
+    const options2 = {
+      mtime: ZIP_MTIME,
+      mode: ZIP_FILE_MODE,
+      forceDosTimestamp: true
+    };
+    if (Object.hasOwn(entries, file)) {
+      zip.addBuffer(entries[file] ?? Buffer.alloc(0), path10, options2);
+    } else {
+      zip.addFile(join5(sourceDir, file), path10, options2);
+    }
+  });
   zip.end();
   try {
     await pipeline(zip.outputStream, output);
@@ -26199,7 +26297,23 @@ function getChecksumsPath(zipPath) {
 }
 async function zipPackage(input2) {
   const { sourceDir, zipPath, force = false } = input2;
-  const checksumsPath = input2.checksums ? getChecksumsPath(zipPath) : null;
+  if (input2.rootFolder && !isValidRootFolder(input2.rootFolder)) {
+    throw new ValidationError(`Invalid root folder "${input2.rootFolder}", use a single folder name.`);
+  }
+  const enabled = input2.checksums || input2.checksumsFile || input2.embedChecksums || input2.signChecksums;
+  const codec = resolveManifestCodec(input2.integrity?.codec);
+  const file = checkChecksumsFile(input2.checksumsFile ?? (codec.id === "wordpress-json" ? basename5(getChecksumsPath(zipPath)) : codec.filename));
+  const checksumsPath = enabled && !input2.embedChecksums ? resolve5(dirname2(zipPath), file) : null;
+  if (checksumsPath === resolve5(zipPath)) {
+    throw new ValidationError("The ZIP and checksums file must have different destinations.");
+  }
+  if (input2.signChecksums) {
+    checkSigningInput({
+      paths: checksumsPath ? [checksumsPath] : [],
+      formats: input2.signChecksums,
+      force
+    });
+  }
   const outputs = [zipPath, checksumsPath].filter((path10) => null !== path10);
   const { files, rules } = await getPackageFilesToRelease({
     sourceDir,
@@ -26209,36 +26323,98 @@ async function zipPackage(input2) {
     operation: "archive"
   });
   checkOutputFiles(outputs, force);
-  await createZip({
-    sourceDir,
-    files,
-    zipPath,
-    rootFolder: input2.rootFolder,
-    force
-  });
-  if (checksumsPath) {
-    const manifest = await createChecksums({
-      sourceDir,
-      rules,
-      slug: input2.slug,
-      version: input2.version ?? null,
-      type: input2.type
-    });
-    await writeChecksums(checksumsPath, manifest, force);
+  const entries = {};
+  let checksumsSigning;
+  let stage;
+  const metadata = [
+    file,
+    ...["wordpress", "minisign", "ssh"].map((format) => getSignaturePath(file, format))
+  ];
+  if (enabled && input2.embedChecksums && metadata.some((path10) => files.some((selected) => selected === path10 || selected.startsWith(path10 + "/") || path10.startsWith(selected + "/")))) {
+    throw new ValidationError("Embedded checksums collide with selected source files. Remove the generated metadata or exclude it from the payload.");
   }
+  try {
+    if (enabled) {
+      const manifest = await createChecksums({
+        sourceDir,
+        rules,
+        slug: input2.slug,
+        version: input2.version ?? null,
+        type: input2.type
+      });
+      const algorithms = input2.integrity?.algorithms;
+      if (algorithms) {
+        if (!algorithms.length || algorithms.some((algorithm) => !["md5", "sha256"].includes(algorithm))) {
+          throw new ValidationError("Checksums algorithms must be md5 and/or sha256.");
+        }
+        Object.values(manifest.files).forEach((hashes) => {
+          if (!algorithms.includes("md5")) {
+            delete hashes.md5;
+          }
+          if (!algorithms.includes("sha256")) {
+            delete hashes.sha256;
+          }
+        });
+      }
+      const bytes = await encodeIntegrity(codec, manifest);
+      stage = await mkdtemp(join6(tmpdir(), "wp-release-integrity-"));
+      const stagedFile = join6(stage, file);
+      await mkdir3(dirname2(stagedFile), { recursive: true });
+      await writeFile5(stagedFile, bytes);
+      if (input2.signChecksums) {
+        checksumsSigning = await signFiles({
+          paths: [stagedFile],
+          formats: input2.signChecksums
+        });
+      }
+      if (input2.embedChecksums) {
+        entries[file] = bytes;
+        for (const format of input2.signChecksums ?? []) {
+          entries[getSignaturePath(file, format)] = await readFile11(getSignaturePath(stagedFile, format));
+        }
+      } else if (checksumsPath) {
+        await mkdir3(dirname2(checksumsPath), { recursive: true });
+        await writeFile5(checksumsPath, bytes, {
+          flag: force ? "w" : "wx"
+        });
+        for (const format of input2.signChecksums ?? []) {
+          await writeFile5(getSignaturePath(checksumsPath, format), await readFile11(getSignaturePath(stagedFile, format)), { flag: force ? "w" : "wx" });
+        }
+      }
+    }
+    await mkdir3(dirname2(zipPath), { recursive: true });
+    await createZip({
+      sourceDir,
+      files,
+      entries,
+      zipPath,
+      rootFolder: input2.rootFolder,
+      force
+    });
+  } finally {
+    if (stage) {
+      await rm3(stage, { recursive: true, force: true });
+    }
+  }
+  const signatures = (input2.signChecksums ?? []).map((format) => getSignaturePath(checksumsPath ?? file, format));
   return {
     zipPath,
     ...checksumsPath ? { checksumsPath } : {},
-    files: files.length
+    ...enabled && input2.embedChecksums ? { checksumsEmbedded: file } : {},
+    ...checksumsSigning ? {
+      checksumsSigning: { ...checksumsSigning, signatures },
+      checksumsSignatures: signatures
+    } : {},
+    files: files.length + Object.keys(entries).length
   };
 }
 
 // ../../js/wp-release/dist/summary.js
-import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve5, sep } from "node:path";
+import { isAbsolute as isAbsolute2, relative as relative2, resolve as resolve6, sep } from "node:path";
 var WPORG_SVN_HOST = "https://plugins.svn.wordpress.org/";
 var SUMMARY_LIST_LIMIT = 100;
 function getWorkspacePath(workspace, file) {
-  const path10 = relative2(workspace, resolve5(file));
+  const path10 = relative2(workspace, resolve6(file));
   const inWorkspace = "" !== path10 && !path10.startsWith("..") && !isAbsolute2(path10);
   return inWorkspace ? path10.split(sep).join("/") : null;
 }
@@ -26295,6 +26471,9 @@ function getZipSummary(context, result) {
     "### ZIP",
     formatList([
       `**ZIP:** ${formatFile(context, result.zipPath)}, ${result.files} files`,
+      ...result.checksumsEmbedded ? [
+        `**Embedded checksums:** ${formatCode(result.checksumsEmbedded)}`
+      ] : [],
       ...result.checksumsPath ? [
         `**Checksums:** ${formatFile(context, result.checksumsPath)}`
       ] : []
@@ -26459,15 +26638,24 @@ Options:
   --checksums                 Also write the checksums manifest of the archived
                               files next to the ZIP, with .checksums.json
                               instead of .zip
+  --checksums-file <file>      Relative manifest filename; implies checksums.
+                              Beside the ZIP, or inside its package root with
+                              --embed-checksums. No absolute paths or dot segments.
+  --checksums-format <format>  wordpress-json (default) or sha256sum
+  --checksums-algorithms <names> md5,sha256 (default), comma-separated or repeated
+  --embed-checksums            Embed manifest instead of writing it beside ZIP
+  --no-embed-checksums         Override embedding configured in integrity
+  --sign-checksums             Sign the manifest only, before embedding it
+  --no-sign-checksums          Override configured manifest signing
   --sign                      Sign only the ZIP with the ${SIGNING_KEY_ENV} key
-  --sign-checksums             Generate and sign the manifest; implies --checksums
-  --sign-format <names>       Formats for requested signatures, comma-separated
-                              or repeated: wordpress,minisign,ssh (default:
+  --sign-format <names>       Signature formats of --sign, comma-separated or
+                              repeated, like wordpress,minisign,ssh, as the
+                              --format of "wp-release sign" (default:
                               wordpress); requires --sign or --sign-checksums
   --force                     Overwrite existing output files
 
-Entries are sorted and use a fixed timestamp and file mode, so the same files
-always give the same ZIP.
+Entries are sorted and use a fixed timestamp and file mode. Embedded minisign
+signatures include their signing time; other built-in metadata is deterministic.
 
 Examples:
   wp-release zip dist --slug my-plugin --checksums
@@ -26485,6 +26673,12 @@ Examples:
     ...fileSelectionArgs,
     package: { type: "string" },
     ...checksumSigningArgs,
+    "checksums-file": { type: "string" },
+    "checksums-format": { type: "string" },
+    "checksums-algorithms": { type: "string", multiple: true },
+    "embed-checksums": { type: "boolean" },
+    "no-embed-checksums": { type: "boolean" },
+    "no-sign-checksums": { type: "boolean" },
     sign: { type: "boolean" },
     force: { type: "boolean" }
   },
@@ -26497,10 +26691,43 @@ Examples:
       output: getString(values, "output"),
       filename: `${filename}.zip`
     });
-    const signing = getArtifactSigning(values, {
+    const loaded = await loadChangesetConfig({ cwd, configFile });
+    const configured = loaded?.config.integrity;
+    const algorithms = getStrings(values, "checksums-algorithms").flatMap((value) => value.split(","));
+    const integrity = {
+      ...configured,
+      codec: getString(values, "checksums-format") ?? configured?.codec,
+      ...algorithms.length ? { algorithms } : {}
+    };
+    const codec = resolveManifestCodec(integrity.codec);
+    const embed = !getBoolean(values, "no-embed-checksums") && (getBoolean(values, "embed-checksums") || Boolean(configured?.embed));
+    const checksumsFile = checkChecksumsFile(getString(values, "checksums-file") ?? configured?.file ?? (codec.id === "wordpress-json" ? basename6(getChecksumsPath(zipPath)) : codec.filename));
+    const manifestSign = !getBoolean(values, "no-sign-checksums") && (getBoolean(values, "sign-checksums") || Boolean(configured?.sign));
+    const checksums = getBoolean(values, "checksums") || embed || manifestSign || Boolean(getString(values, "checksums-file") ?? configured?.file);
+    const signFormats = getStrings(values, "sign-format");
+    const configuredFormats = configured?.sign ? configured.sign.formats ?? [] : [];
+    const formats = parseSignatureFormats(signFormats.length ? signFormats : configuredFormats);
+    if (signFormats.length && !manifestSign && !getBoolean(values, "sign")) {
+      throw new ValidationError("--sign-format requires --sign or --sign-checksums; it does not enable signing.");
+    }
+    const signing = getBoolean(values, "sign") ? getArtifactSigning({
+      ...values,
+      "sign-checksums": false,
+      "sign-format": formats
+    }, {
       artifact: zipPath,
-      checksums: getChecksumsPath(zipPath)
-    });
+      checksums: resolve7(dirname3(zipPath), checksumsFile)
+    }) : void 0;
+    const externalManifest = checksums && !embed ? resolve7(dirname3(zipPath), checksumsFile) : void 0;
+    const artifacts = [
+      zipPath,
+      ...externalManifest ? [externalManifest] : [],
+      ...signing ? formats.map((format) => getSignaturePath(zipPath, format)) : [],
+      ...externalManifest && manifestSign ? formats.map((format) => getSignaturePath(externalManifest, format)) : []
+    ];
+    if (new Set(artifacts).size !== artifacts.length || artifacts.some((path10, index) => artifacts.some((other, otherIndex) => index !== otherIndex && other.startsWith(path10 + sep2)))) {
+      throw new ValidationError("ZIP, manifest and signature destinations must be distinct.");
+    }
     const zipped = await zipPackage({
       sourceDir: source.sourceDir,
       selection: source.selection,
@@ -26509,7 +26736,11 @@ Examples:
       slug: source.slug,
       version: source.version,
       ...source.type ? { type: source.type } : {},
-      checksums: getBoolean(values, "checksums") || getBoolean(values, "sign-checksums"),
+      checksums,
+      checksumsFile: checksums ? checksumsFile : void 0,
+      embedChecksums: embed,
+      integrity,
+      signChecksums: manifestSign ? formats : void 0,
       force: getBoolean(values, "force")
     });
     logger2.debug(`Archived ${zipped.files} files from ${source.sourceDir}.`);
@@ -26521,8 +26752,15 @@ Examples:
     signed?.signatures.forEach((path10) => logger2.info(path10));
     const result = {
       ...zipped,
+      ...zipped.checksumsSigning ? {
+        signatures: zipped.checksumsSignatures,
+        publicKey: zipped.checksumsSigning.publicKey
+      } : {},
       ...signed ? {
-        signatures: signed.signatures,
+        signatures: [
+          ...signed.signatures,
+          ...zipped.checksumsSignatures ?? []
+        ],
         publicKey: signed.publicKey
       } : {},
       slug: source.slug,
@@ -26530,6 +26768,13 @@ Examples:
       ...source.package ? { package: source.package } : {}
     };
     logger2.summary((context) => getZipSummary(context, result));
+    const checksumsSigning = zipped.checksumsSigning;
+    if (checksumsSigning) {
+      logger2.summary((context) => getSignSummary(context, {
+        ...checksumsSigning,
+        formats
+      }));
+    }
     if (signed) {
       logger2.summary((context) => getSignSummary(context, signed));
     }
@@ -26538,27 +26783,27 @@ Examples:
 };
 
 // ../../js/wp-release/dist/commands/build.js
-import { resolve as resolve7 } from "node:path";
+import { resolve as resolve9 } from "node:path";
 
 // ../../js/wp-release/dist/package-build.js
-import { copyFile as copyFile2, lstat as lstat2, mkdir as mkdir3, mkdtemp, realpath as realpath3, rename as rename2, rm as rm3 } from "node:fs/promises";
-import { basename as basename4, dirname as dirname2, isAbsolute as isAbsolute3, join as join6, relative as relative3, resolve as resolve6 } from "node:path";
+import { copyFile as copyFile2, lstat as lstat2, mkdir as mkdir4, mkdtemp as mkdtemp2, realpath as realpath3, rename as rename2, rm as rm4 } from "node:fs/promises";
+import { basename as basename7, dirname as dirname4, isAbsolute as isAbsolute3, join as join7, relative as relative3, resolve as resolve8 } from "node:path";
 function getBuildChecksumsPath(outputDir) {
-  return resolve6(outputDir) + CHECKSUMS_EXTENSION;
+  return resolve8(outputDir) + CHECKSUMS_EXTENSION;
 }
 async function resolveDirectoryPath(path10) {
   try {
     return await realpath3(path10);
   } catch (error) {
     if (isErrorCode(error, "ENOENT")) {
-      return join6(await resolveDirectoryPath(dirname2(path10)), basename4(path10));
+      return join7(await resolveDirectoryPath(dirname4(path10)), basename7(path10));
     }
     throw error;
   }
 }
 async function buildPackage(input2) {
   const sourceDir = await realpath3(input2.sourceDir);
-  const outputDir = resolve6(input2.outputDir);
+  const outputDir = resolve8(input2.outputDir);
   const canonicalOutput = await resolveDirectoryPath(outputDir);
   const sourceFromOutput = relative3(canonicalOutput, sourceDir);
   const outputContainsSource = !sourceFromOutput || !isAbsolute3(sourceFromOutput) && sourceFromOutput !== ".." && !sourceFromOutput.startsWith("../");
@@ -26588,30 +26833,30 @@ async function buildPackage(input2) {
     excludeSignatures: !!checksumsPath,
     operation: "build"
   });
-  await mkdir3(dirname2(outputDir), { recursive: true });
-  const staging = await mkdtemp(join6(dirname2(outputDir), ".wp-release-build-"));
+  await mkdir4(dirname4(outputDir), { recursive: true });
+  const staging = await mkdtemp2(join7(dirname4(outputDir), ".wp-release-build-"));
   try {
     for (const file of files) {
-      const target = join6(staging, file);
-      await mkdir3(dirname2(target), { recursive: true });
-      await copyFile2(join6(sourceDir, file), target);
+      const target = join7(staging, file);
+      await mkdir4(dirname4(target), { recursive: true });
+      await copyFile2(join7(sourceDir, file), target);
     }
     const manifest = checksumsPath ? await createChecksums({
       sourceDir: staging,
       rules,
-      slug: input2.slug ?? basename4(sourceDir),
+      slug: input2.slug ?? basename7(sourceDir),
       version: input2.version,
       type: input2.type
     }) : null;
     if (existing) {
-      await rm3(outputDir, { recursive: true });
+      await rm4(outputDir, { recursive: true });
     }
     await rename2(staging, outputDir);
     if (checksumsPath && manifest) {
       await writeChecksums(checksumsPath, manifest, input2.force);
     }
   } finally {
-    await rm3(staging, { recursive: true, force: true });
+    await rm4(staging, { recursive: true, force: true });
   }
   return {
     outputDir,
@@ -26663,7 +26908,7 @@ Examples:
     }
     const name = getPackageArg(values, positionals);
     const source = name ? await getPackageSource(values, cwd, name, configFile) : await getDirectorySource(values, positionals, cwd);
-    const outputDir = resolve7(cwd, output);
+    const outputDir = resolve9(cwd, output);
     const signing = getArtifactSigning(values, {
       checksums: getBuildChecksumsPath(outputDir)
     });
@@ -26698,7 +26943,8 @@ Examples:
 };
 
 // ../../js/wp-release/dist/commands/checksums.js
-import { basename as basename5, resolve as resolve8 } from "node:path";
+import { mkdir as mkdir5, writeFile as writeFile6 } from "node:fs/promises";
+import { dirname as dirname5, basename as basename8, resolve as resolve10 } from "node:path";
 var checksums_default = {
   name: "checksums",
   usage: "checksums [<source-dir>] [options]",
@@ -26708,6 +26954,7 @@ var checksums_default = {
                               accepted as --source-dir <dir>
 
 Options:
+  --checksums-format <name>    wordpress-json (default) or sha256sum
   --output <file>             Manifest file (default: the --filename-format name
                               in the current directory)
   --slug <slug>               Plugin or theme slug (default: project directory name)
@@ -26733,22 +26980,25 @@ matches the ZIP contents.`,
     version: { type: "string" },
     type: { type: "string" },
     "filename-format": { type: "string" },
+    "checksums-format": { type: "string" },
     output: { type: "string" },
     ...sourceDirArgs,
     ...fileSelectionArgs,
     force: { type: "boolean" }
   },
-  async run({ values, positionals, cwd, logger: logger2 }) {
-    const sourceDir = resolve8(cwd, getSourceDirArg(values, positionals));
-    const slug = getString(values, "slug") ?? basename5(cwd);
+  async run({ values, positionals, cwd, configFile, logger: logger2 }) {
+    const sourceDir = resolve10(cwd, getSourceDirArg(values, positionals));
+    const slug = getString(values, "slug") ?? basename8(cwd);
     await checkDirectory(sourceDir);
     const meta = await readPackageMeta({ dir: sourceDir, slug });
     const version = getString(values, "version") ?? meta?.version ?? null;
     const filename = formatFilename(getString(values, "filename-format") ?? FILENAME_FORMAT, { slug, version });
+    const loaded = await loadChangesetConfig({ cwd, configFile });
+    const codec = resolveManifestCodec(getString(values, "checksums-format") ?? loaded?.config.integrity?.codec);
     const checksumsPath = resolveOutput({
       cwd,
       output: getString(values, "output"),
-      filename: filename + CHECKSUMS_EXTENSION
+      filename: codec.id === "wordpress-json" ? filename + CHECKSUMS_EXTENSION : codec.filename
     });
     const selection = resolveFileSelection({
       cwd,
@@ -26764,7 +27014,17 @@ matches the ZIP contents.`,
       type: getString(values, "type") ?? meta?.type
     });
     const files = Object.keys(manifest.files).length;
-    await writeChecksums(checksumsPath, manifest, getBoolean(values, "force"));
+    await mkdir5(dirname5(checksumsPath), { recursive: true });
+    try {
+      await writeFile6(checksumsPath, await encodeIntegrity(codec, manifest), {
+        flag: getBoolean(values, "force") ? "w" : "wx"
+      });
+    } catch (error) {
+      if (isErrorCode(error, "EEXIST")) {
+        throw new ValidationError(`${checksumsPath} already exists, pass --force to overwrite it.`);
+      }
+      throw error;
+    }
     logger2.debug(`Hashed ${files} files in ${sourceDir}.`);
     logger2.info(checksumsPath);
     logger2.summary((context) => getChecksumsSummary(context, { checksumsPath, files }));
@@ -26773,7 +27033,7 @@ matches the ZIP contents.`,
 };
 
 // ../../js/wp-release/dist/commands/sign.js
-import { resolve as resolve9 } from "node:path";
+import { resolve as resolve11 } from "node:path";
 var sign_default = {
   name: "sign",
   usage: "sign <file>... [options]",
@@ -26812,7 +27072,7 @@ form of each format.`,
       throw new ValidationError("Pass the files to sign.");
     }
     const signed = await signFiles({
-      paths: positionals.map((file) => resolve9(cwd, file)),
+      paths: positionals.map((file) => resolve11(cwd, file)),
       formats,
       force: getBoolean(values, "force")
     });
@@ -26853,9 +27113,9 @@ since the same key signs every format of "wp-release sign".`,
 
 // ../../js/wp-release/dist/commands/verify.js
 import { existsSync as existsSync4 } from "node:fs";
-import { mkdir as mkdir5, mkdtemp as mkdtemp2, readFile as readFile10, rm as rm4 } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { basename as basename6, isAbsolute as isAbsolute4, join as join8, posix as posix3, resolve as resolve10 } from "node:path";
+import { mkdir as mkdir7, mkdtemp as mkdtemp3, readFile as readFile12, rm as rm5 } from "node:fs/promises";
+import { tmpdir as tmpdir2 } from "node:os";
+import { basename as basename9, isAbsolute as isAbsolute4, join as join9, posix as posix3, resolve as resolve12 } from "node:path";
 
 // ../../js/wp-release/dist/download.js
 import { createWriteStream as createWriteStream2 } from "node:fs";
@@ -26891,18 +27151,18 @@ function logError(logger2, error, title = "wp-release") {
 // ../../js/wp-release/dist/unzip.js
 var import_yauzl = __toESM(require_yauzl(), 1);
 import { createWriteStream as createWriteStream3 } from "node:fs";
-import { mkdir as mkdir4 } from "node:fs/promises";
-import { dirname as dirname3, join as join7 } from "node:path";
+import { mkdir as mkdir6 } from "node:fs/promises";
+import { dirname as dirname6, join as join8 } from "node:path";
 import { pipeline as pipeline3 } from "node:stream/promises";
 var SYMLINK_FILE_TYPE = 10;
 async function readEntries(zipPath, onEntry) {
-  const zip = await new Promise((resolve13, reject) => import_yauzl.default.open(zipPath, { lazyEntries: true, autoClose: false }, (error, file) => error ? reject(error) : resolve13(file))).catch((error) => {
+  const zip = await new Promise((resolve15, reject) => import_yauzl.default.open(zipPath, { lazyEntries: true, autoClose: false }, (error, file) => error ? reject(error) : resolve15(file))).catch((error) => {
     throw new ValidationError(`${zipPath} isn't a valid ZIP file: ${error.message}`);
   });
   try {
-    await new Promise((resolve13, reject) => {
+    await new Promise((resolve15, reject) => {
       zip.on("entry", (entry) => onEntry(entry, zip).then(() => zip.readEntry(), reject));
-      zip.on("end", resolve13);
+      zip.on("end", resolve15);
       zip.on("error", (error) => reject(new ValidationError(`Can't read ${zipPath}: ${error.message}`)));
       zip.readEntry();
     });
@@ -26954,8 +27214,8 @@ ${errors.join("\n")}`);
   await readEntries(zipPath, async (entry, zip) => {
     const path10 = rootFolder ? entry.fileName.split("/").slice(1).join("/") : entry.fileName;
     if (path10 && "file" === getEntryType(entry)) {
-      const target = join7(targetDir, path10);
-      await mkdir4(dirname3(target), { recursive: true });
+      const target = join8(targetDir, path10);
+      await mkdir6(dirname6(target), { recursive: true });
       await pipeline3(await openReadStream(zip, entry), createWriteStream3(target, { flags: "wx" }));
       files.push(path10);
     }
@@ -26963,7 +27223,7 @@ ${errors.join("\n")}`);
   return files.sort();
 }
 function openReadStream(zip, entry) {
-  return new Promise((resolve13, reject) => zip.openReadStream(entry, (error, stream) => error ? reject(error) : resolve13(stream)));
+  return new Promise((resolve15, reject) => zip.openReadStream(entry, (error, stream) => error ? reject(error) : resolve15(stream)));
 }
 
 // ../../js/wp-release/dist/commands/verify.js
@@ -26990,15 +27250,15 @@ async function resolveTarget(input2) {
     await checkDirectory(sourceDir);
     return { dir: sourceDir, cleanup: async () => void 0 };
   }
-  const tempDir = await mkdtemp2(join8(tmpdir(), "wp-release-verify-"));
-  const cleanup = () => rm4(tempDir, { recursive: true, force: true });
+  const tempDir = await mkdtemp3(join9(tmpdir2(), "wp-release-verify-"));
+  const cleanup = () => rm5(tempDir, { recursive: true, force: true });
   try {
-    const zipPath = isUrl(zip) ? join8(tempDir, "download.zip") : resolve10(cwd, zip);
-    const dir = join8(tempDir, "files");
+    const zipPath = isUrl(zip) ? join9(tempDir, "download.zip") : resolve12(cwd, zip);
+    const dir = join9(tempDir, "files");
     if (isUrl(zip)) {
       await downloadFile(zip, zipPath);
     }
-    await mkdir5(dir);
+    await mkdir7(dir);
     await extractZip({
       zipPath,
       targetDir: dir,
@@ -27011,11 +27271,11 @@ async function resolveTarget(input2) {
   }
 }
 function getEmbeddedPath(checksumsPath, embedded) {
-  const path10 = posix3.normalize(embedded ?? basename6(checksumsPath));
+  const path10 = posix3.normalize(embedded ?? basename9(checksumsPath));
   if (embedded && (isAbsolute4(embedded) || embedded.includes("\\") || path10.startsWith("../") || [".", ".."].includes(path10))) {
     throw new ValidationError(`--embedded must be a path inside the plugin with forward slashes, got "${embedded}".`);
   }
-  return embedded || path10.endsWith(".json") ? path10 : null;
+  return path10;
 }
 function getCopyPairs(checksumsPath, path10, format) {
   return path10 ? [
@@ -27037,23 +27297,32 @@ function checkExplicitPairs(pairs, manifest) {
   });
 }
 async function hasSameContents(original, file) {
-  return resolve10(original) === resolve10(file) || (await readFile10(original)).equals(await readFile10(file));
+  return resolve12(original) === resolve12(file) || (await readFile12(original)).equals(await readFile12(file));
 }
 async function checkEmbeddedCopies(input2) {
   const { dir, manifest, checksumsPath, embedded, format } = input2;
-  const pairs = getCopyPairs(checksumsPath, getEmbeddedPath(checksumsPath, embedded), format);
-  if (embedded) {
-    checkExplicitPairs(pairs, manifest);
+  const path10 = getEmbeddedPath(checksumsPath, embedded);
+  const pairs = getCopyPairs(checksumsPath, path10, format).filter((pair) => pair.original !== join9(dir, pair.copy) || existsSync4(pair.original));
+  for (const other of Object.keys(SIGNATURE_FORMATS)) {
+    if (other !== format && path10 && existsSync4(getSignaturePath(checksumsPath, other))) {
+      pairs.push({
+        original: getSignaturePath(checksumsPath, other),
+        copy: getSignaturePath(path10, other)
+      });
+    }
   }
-  const found = pairs.filter(({ original, copy }) => existsSync4(join8(dir, copy)) && (embedded || existsSync4(original) && !Object.hasOwn(manifest.files, copy)));
+  if (embedded) {
+    checkExplicitPairs(pairs.filter((pair) => pair.original !== join9(dir, pair.copy) || existsSync4(pair.original)), manifest);
+  }
+  const found = pairs.filter(({ original, copy }) => existsSync4(join9(dir, copy)) && (embedded || existsSync4(original) && !Object.hasOwn(manifest.files, copy)));
   const results = await Promise.all(found.map(async ({ original, copy }) => ({
     copy,
-    isSame: await hasSameContents(original, join8(dir, copy))
+    isSame: await hasSameContents(original, join9(dir, copy))
   })));
   return {
     paths: found.map(({ copy }) => copy),
     differing: results.filter(({ isSame }) => !isSame).map(({ copy }) => copy),
-    missing: embedded ? pairs.filter(({ copy }) => !existsSync4(join8(dir, copy))).map(({ copy }) => copy) : []
+    missing: embedded ? pairs.filter(({ copy }) => !existsSync4(join9(dir, copy))).map(({ copy }) => copy) : []
   };
 }
 function getVerifyProblems(dir, result) {
@@ -27061,7 +27330,7 @@ function getVerifyProblems(dir, result) {
   return [
     ...changed.map((file) => ({
       message: `Changed: ${file}`,
-      file: join8(dir, file),
+      file: join9(dir, file),
       title: "Changed file"
     })),
     ...missing.map((file) => ({
@@ -27070,7 +27339,7 @@ function getVerifyProblems(dir, result) {
     })),
     ...extra.map((file) => ({
       message: `Not in the checksums: ${file}`,
-      file: join8(dir, file),
+      file: join9(dir, file),
       title: "File not in the checksums"
     })),
     ...versionMismatch ? [
@@ -27100,7 +27369,7 @@ async function verifyTarget(input2) {
     format
   });
   const rules = ignoreOwnSignature(ignoreOwnFile(await loadFileRules({ exclude: parseExclude(exclude) }), dir, checksumsPath), dir, checksumsPath);
-  copies.paths.forEach((copy) => ignoreOwnFile(rules, dir, join8(dir, copy)));
+  copies.paths.forEach((copy) => ignoreOwnFile(rules, dir, join9(dir, copy)));
   const comparison = await verifyChecksums({
     sourceDir: dir,
     manifest,
@@ -27146,8 +27415,10 @@ var verify_default = {
                           accepted as --source-dir <dir>
 
 Options:
-  --checksums <file>      Checksums manifest from "wp-release checksums" or the
-                          WordPress.org checksums API (required)
+  --checksums-file <file> Relative embedded manifest path (default: checksums.json)
+  --checksums-format <name> wordpress-json or sha256sum; custom codecs via --config
+  --checksums <file>      External checksums manifest from "wp-release checksums" or the
+                          WordPress.org checksums API (optional; otherwise reads embedded manifest)
   --zip <file|url>        Check the files of this ZIP, a local file or an
                           http(s) URL such as the ZIP that WordPress.org
                           builds for a release, instead of <source-dir>
@@ -27191,6 +27462,8 @@ file that isn't a matching copy is reported as extra. See --embedded for
 where the copies are looked for.`,
   options: {
     checksums: { type: "string" },
+    "checksums-format": { type: "string" },
+    "checksums-file": { type: "string" },
     zip: { type: "string" },
     "root-folder": { type: "string" },
     embedded: { type: "string" },
@@ -27199,40 +27472,48 @@ where the copies are looked for.`,
     ...sourceDirArgs,
     exclude: { type: "string", multiple: true }
   },
-  async run({ values, positionals, cwd, logger: logger2 }) {
+  async run({ values, positionals, cwd, configFile, logger: logger2 }) {
     const zip = getString(values, "zip");
     const sourceArg = positionals.length ? getSourceDirArg(values, positionals) : getString(values, "source-dir");
     const checksums = getString(values, "checksums");
-    if (!checksums) {
-      throw new ValidationError("Pass the checksums manifest with --checksums <file>.");
-    }
     if (zip && sourceArg) {
       throw new ValidationError("Pass either --zip or a source directory, not both.");
     }
-    const checksumsPath = resolve10(cwd, checksums);
+    const loaded = configFile ? await loadChangesetConfig({ cwd, configFile }) : void 0;
+    const integrity = loaded?.config.integrity;
+    const codec = getString(values, "checksums-format") ?? integrity?.codec;
+    const file = checkChecksumsFile(getString(values, "checksums-file") ?? integrity?.file ?? resolveManifestCodec(codec).filename);
     const publicKey = getString(values, "public-key");
     const format = getString(values, "signature-format") ?? DEFAULT_SIGNATURE_FORMAT;
     if (!isSignatureFormat(format)) {
       throw new ValidationError(`Unknown signature format ${format}, use ${Object.keys(SIGNATURE_FORMATS).join(", ")}.`);
     }
-    if (publicKey) {
-      await checkSignature(checksumsPath, publicKey, format);
-      logger2.info(`Signature of ${checksumsPath} is valid.`);
-    }
-    const manifest = await readChecksums(checksumsPath);
     const target = await resolveTarget({
-      sourceDir: resolve10(cwd, sourceArg ?? "."),
+      sourceDir: resolve12(cwd, sourceArg ?? "."),
       zip,
       cwd,
       rootFolder: getString(values, "root-folder")
     });
+    const checksumsPath = checksums ? resolve12(cwd, checksums) : join9(target.dir, file);
     try {
+      if (publicKey) {
+        await checkSignature(checksumsPath, publicKey, format);
+        if (!checksums) {
+          for (const other of Object.keys(SIGNATURE_FORMATS)) {
+            if (other !== format && existsSync4(getSignaturePath(checksumsPath, other))) {
+              await checkSignature(checksumsPath, publicKey, other);
+            }
+          }
+        }
+        logger2.info(`Signature of ${checksumsPath} is valid.`);
+      }
+      const manifest = await readIntegrity(checksumsPath, codec);
       return await verifyTarget({
         target,
         manifest,
         checksumsPath,
         exclude: getStrings(values, "exclude"),
-        embedded: getString(values, "embedded"),
+        embedded: getString(values, "embedded") ?? (checksums ? void 0 : file),
         format,
         logger: logger2
       });
@@ -27243,7 +27524,7 @@ where the copies are looked for.`,
 };
 
 // ../../js/wp-release/dist/commands/version-check.js
-import { basename as basename7, resolve as resolve11 } from "node:path";
+import { basename as basename10, resolve as resolve13 } from "node:path";
 function getGitTag(gitTag) {
   const ref = process.env.GITHUB_REF;
   return gitTag ?? (isTagRef(ref) ? ref ?? null : null);
@@ -27280,8 +27561,8 @@ no Stable tag, so it's only checked for plugins.`,
     ...sourceDirArgs
   },
   async run({ values, positionals, cwd, logger: logger2 }) {
-    const sourceDir = resolve11(cwd, getSourceDirArg(values, positionals));
-    const slug = getString(values, "slug") ?? basename7(cwd);
+    const sourceDir = resolve13(cwd, getSourceDirArg(values, positionals));
+    const slug = getString(values, "slug") ?? basename10(cwd);
     await checkDirectory(sourceDir);
     const meta = await readPackageMeta({
       dir: sourceDir,
@@ -27316,9 +27597,9 @@ no Stable tag, so it's only checked for plugins.`,
 // ../../js/wp-release/dist/svn-deploy.js
 var import_ignore4 = __toESM(require_ignore(), 1);
 import { existsSync as existsSync5 } from "node:fs";
-import { mkdir as mkdir7, mkdtemp as mkdtemp3, rm as rm6 } from "node:fs/promises";
-import { tmpdir as tmpdir2 } from "node:os";
-import { extname, join as join10, posix as posix4 } from "node:path";
+import { mkdir as mkdir9, mkdtemp as mkdtemp4, rm as rm7 } from "node:fs/promises";
+import { tmpdir as tmpdir3 } from "node:os";
+import { extname, join as join11, posix as posix4 } from "node:path";
 
 // ../../js/wp-release/dist/logger.js
 var TextWriter = class {
@@ -27443,7 +27724,7 @@ function toSvnPath(path10) {
   return path10.includes("@") ? `${path10}@` : path10;
 }
 function createSvnRunner(binary = "svn") {
-  return ({ args, cwd, input: input2 }) => new Promise((resolve13, reject) => {
+  return ({ args, cwd, input: input2 }) => new Promise((resolve15, reject) => {
     const child = spawn2(binary, args, {
       cwd,
       env: { ...process.env, LC_ALL: "C" },
@@ -27457,7 +27738,7 @@ function createSvnRunner(binary = "svn") {
     child.on("error", (error) => reject(new SvnError(`Can't run ${binary}: ${error.message}. Install the Subversion command line client.`)));
     child.on("close", (code) => {
       if (0 === code) {
-        resolve13(output);
+        resolve15(output);
       } else {
         reject(new SvnError(`svn ${args[0]} failed: ${output.stderr.trim()}`, output.stderr));
       }
@@ -27674,8 +27955,8 @@ var Svn = class {
 
 // ../../js/wp-release/dist/sync.js
 var import_ignore3 = __toESM(require_ignore(), 1);
-import { copyFile as copyFile3, mkdir as mkdir6, readdir as readdir5, readFile as readFile11, rm as rm5, rmdir as rmdir2, stat as stat4 } from "node:fs/promises";
-import { dirname as dirname4, join as join9 } from "node:path";
+import { copyFile as copyFile3, mkdir as mkdir8, readdir as readdir5, readFile as readFile13, rm as rm6, rmdir as rmdir2, stat as stat4 } from "node:fs/promises";
+import { dirname as dirname7, join as join10 } from "node:path";
 var SVN_DIRECTORY = ".svn";
 async function isSameFile(source, target) {
   const targetStats = await stat4(target).catch((error) => {
@@ -27689,8 +27970,8 @@ async function isSameFile(source, target) {
     return false;
   }
   const [sourceContents, targetContents] = await Promise.all([
-    readFile11(source),
-    readFile11(target)
+    readFile13(source),
+    readFile13(target)
   ]);
   return sourceContents.equals(targetContents);
 }
@@ -27698,7 +27979,7 @@ async function copyFileIfChanged(source, target) {
   if (await isSameFile(source, target)) {
     return false;
   }
-  await mkdir6(dirname4(target), { recursive: true });
+  await mkdir8(dirname7(target), { recursive: true });
   await copyFile3(source, target);
   return true;
 }
@@ -27706,7 +27987,7 @@ async function removeEmptyDirectories(dir, root = true) {
   const entries = await readdir5(dir, { withFileTypes: true });
   const subdirs = entries.filter((entry) => entry.isDirectory() && SVN_DIRECTORY !== entry.name);
   for (const subdir of subdirs) {
-    await removeEmptyDirectories(join9(dir, subdir.name), false);
+    await removeEmptyDirectories(join10(dir, subdir.name), false);
   }
   if (!root && 0 === (await readdir5(dir)).length) {
     await rmdir2(dir);
@@ -27715,16 +27996,16 @@ async function removeEmptyDirectories(dir, root = true) {
 async function syncDirectory(input2) {
   const { sourceDir, files, targetDir } = input2;
   const selected = new Set(files);
-  await mkdir6(targetDir, { recursive: true });
+  await mkdir8(targetDir, { recursive: true });
   const existing = await selectFiles(targetDir, (0, import_ignore3.default)().add(`${SVN_DIRECTORY}/`));
   const deleted = existing.filter((file) => !selected.has(file));
   for (const file of deleted) {
-    await rm5(join9(targetDir, file));
+    await rm6(join10(targetDir, file));
   }
   await removeEmptyDirectories(targetDir);
   const copied = [];
   for (const file of files) {
-    if (await copyFileIfChanged(join9(sourceDir, file), join9(targetDir, file))) {
+    if (await copyFileIfChanged(join10(sourceDir, file), join10(targetDir, file))) {
       copied.push(file);
     }
   }
@@ -27776,7 +28057,7 @@ var SvnDeploy = class {
     if (!this.tempDir) {
       throw new Error("Call prepare() before the other deploy steps.");
     }
-    return join10(this.tempDir, "svn");
+    return join11(this.tempDir, "svn");
   }
   /**
    * Create the temporary directory and, with fromZip, extract the archive
@@ -27785,11 +28066,11 @@ var SvnDeploy = class {
    */
   async prepare() {
     const { fromZip, sourceDir, slug } = this.options;
-    this.tempDir = await mkdtemp3(join10(tmpdir2(), `wp-release-${slug}-`));
+    this.tempDir = await mkdtemp4(join11(tmpdir3(), `wp-release-${slug}-`));
     this.filesDir = sourceDir;
     if (fromZip && this.needsFiles()) {
-      this.filesDir = join10(this.tempDir, "files");
-      await mkdir7(this.filesDir);
+      this.filesDir = join11(this.tempDir, "files");
+      await mkdir9(this.filesDir);
       await extractZip({
         zipPath: fromZip,
         targetDir: this.filesDir,
@@ -27867,7 +28148,7 @@ var SvnDeploy = class {
       depth: "immediates"
     });
     for (const { path: path10, depth } of this.getCheckoutPaths()) {
-      await this.svn.update({ path: join10(workingCopy, path10), depth });
+      await this.svn.update({ path: join11(workingCopy, path10), depth });
       await this.addMissingDirectory(path10);
     }
     if (tagPath && !this.options.force && this.hasTag()) {
@@ -27875,7 +28156,7 @@ var SvnDeploy = class {
     }
     if (tagPath && !this.options.trunk && this.hasTag()) {
       await this.svn.update({
-        path: join10(workingCopy, tagPath),
+        path: join11(workingCopy, tagPath),
         depth: "infinity"
       });
     }
@@ -27888,8 +28169,8 @@ var SvnDeploy = class {
    */
   async addMissingDirectory(path10) {
     const workingCopy = this.getWorkingCopy();
-    if (!existsSync5(join10(workingCopy, path10))) {
-      await mkdir7(join10(workingCopy, path10));
+    if (!existsSync5(join11(workingCopy, path10))) {
+      await mkdir9(join11(workingCopy, path10));
       await this.svn.add({ paths: [path10], cwd: workingCopy });
     }
   }
@@ -27900,7 +28181,7 @@ var SvnDeploy = class {
    */
   hasTag() {
     const tagPath = this.getTagPath();
-    return Boolean(tagPath && existsSync5(join10(this.getWorkingCopy(), tagPath)));
+    return Boolean(tagPath && existsSync5(join11(this.getWorkingCopy(), tagPath)));
   }
   /**
    * Copy the files for each write flag into the working copy and stage
@@ -27916,18 +28197,18 @@ var SvnDeploy = class {
       await syncDirectory({
         sourceDir,
         files: await this.getSourceFiles(sourceDir),
-        targetDir: join10(workingCopy, "trunk")
+        targetDir: join11(workingCopy, "trunk")
       });
     }
     if (tagPath && !trunk) {
       await syncDirectory({
         sourceDir,
         files: await this.getSourceFiles(sourceDir),
-        targetDir: join10(workingCopy, tagPath)
+        targetDir: join11(workingCopy, tagPath)
       });
     }
     if (readmeOnly) {
-      await copyFileIfChanged(join10(sourceDir, readme), join10(workingCopy, "trunk", readme));
+      await copyFileIfChanged(join11(sourceDir, readme), join11(workingCopy, "trunk", readme));
     }
     if (assets) {
       await this.syncAssets();
@@ -27959,7 +28240,7 @@ var SvnDeploy = class {
     await syncDirectory({
       sourceDir: assetsDir,
       files: await selectFiles(assetsDir, await loadFileRules({})),
-      targetDir: join10(this.getWorkingCopy(), "assets")
+      targetDir: join11(this.getWorkingCopy(), "assets")
     });
   }
   /**
@@ -27983,7 +28264,7 @@ var SvnDeploy = class {
    */
   async setAssetMimeTypes() {
     const workingCopy = this.getWorkingCopy();
-    const files = await selectFiles(join10(workingCopy, "assets"), (0, import_ignore4.default)().add(".svn/"));
+    const files = await selectFiles(join11(workingCopy, "assets"), (0, import_ignore4.default)().add(".svn/"));
     for (const [extension, mimeType] of Object.entries(ASSET_MIME_TYPES)) {
       await this.svn.propset({
         name: "svn:mime-type",
@@ -28059,7 +28340,7 @@ var SvnDeploy = class {
    */
   async cleanup() {
     if (this.tempDir) {
-      await rm6(this.tempDir, { recursive: true, force: true });
+      await rm7(this.tempDir, { recursive: true, force: true });
       this.tempDir = null;
     }
   }
@@ -28429,9 +28710,9 @@ Examples:
 };
 
 // ../../js/wp-release/dist/git-deploy.js
-import { mkdtemp as mkdtemp4, rm as rm7, stat as stat5 } from "node:fs/promises";
-import { tmpdir as tmpdir3 } from "node:os";
-import { join as join11, resolve as resolve12 } from "node:path";
+import { mkdtemp as mkdtemp5, rm as rm8, stat as stat5 } from "node:fs/promises";
+import { tmpdir as tmpdir4 } from "node:os";
+import { join as join12, resolve as resolve14 } from "node:path";
 function isValidRefName(name) {
   return /^[^\s~^:?*[\\]+$/.test(name) && !/(^[-/.]|\/\.|\.\.|\/\/|@\{|\.lock$|[/.]$)/.test(name);
 }
@@ -28457,8 +28738,8 @@ function getGitAuthEnv(gitUrl, token, env = process.env) {
   } : {};
 }
 function resolveGitDeployOptions(input2 = {}) {
-  const cwd = resolve12(input2.cwd ?? process.cwd());
-  const sourceDir = resolve12(cwd, input2.sourceDir || ".");
+  const cwd = resolve14(input2.cwd ?? process.cwd());
+  const sourceDir = resolve14(cwd, input2.sourceDir || ".");
   const names = [
     ["branch", input2.branch],
     ["tag", input2.tag]
@@ -28575,15 +28856,15 @@ var GitDeploy = class {
     }
     const hashes = await this.git({
       args: ["hash-object", "-w", "--no-filters", "--stdin-paths"],
-      input: files.map((file) => join11(sourceDir, file)).join("\n")
+      input: files.map((file) => join12(sourceDir, file)).join("\n")
     });
     const modes = await Promise.all(files.map(async (file) => (
       // eslint-disable-next-line no-bitwise
-      (await stat5(join11(sourceDir, file))).mode & 73 ? "100755" : "100644"
+      (await stat5(join12(sourceDir, file))).mode & 73 ? "100755" : "100644"
     )));
     const shas = hashes.split("\n");
-    const indexDir = await mkdtemp4(join11(tmpdir3(), "wp-release-git-"));
-    const env = { GIT_INDEX_FILE: join11(indexDir, "index") };
+    const indexDir = await mkdtemp5(join12(tmpdir4(), "wp-release-git-"));
+    const env = { GIT_INDEX_FILE: join12(indexDir, "index") };
     try {
       await this.git({
         args: ["update-index", "--add", "--index-info"],
@@ -28594,7 +28875,7 @@ var GitDeploy = class {
       this.logger.debug(`Created tree ${tree} of ${files.length} files.`);
       return { tree, files: files.length };
     } finally {
-      await rm7(indexDir, { recursive: true, force: true });
+      await rm8(indexDir, { recursive: true, force: true });
     }
   }
   /**
@@ -29272,7 +29553,7 @@ ${legend}
 import path9 from "node:path";
 
 // ../../js/wp-release/dist/changelog.js
-import { readFile as readFile12, writeFile as writeFile5 } from "node:fs/promises";
+import { readFile as readFile14, writeFile as writeFile7 } from "node:fs/promises";
 import path6 from "node:path";
 async function getVersionedReleases(repository, config, releases, changesetDirectory) {
   const commits = /* @__PURE__ */ new Map();
@@ -29339,7 +29620,7 @@ ${release.changelog}
   const changelog = path6.join(directory, "CHANGELOG.md");
   let previous = "";
   try {
-    previous = await readFile12(changelog, "utf8");
+    previous = await readFile14(changelog, "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -29349,7 +29630,7 @@ ${release.changelog}
   if (!releaseHeading.test(previous)) {
     await journal.remember(changelog);
     if (void 0 !== changelogInsertAfter) {
-      await writeFile5(changelog, insertAfterMarker(previous, changelogInsertAfter, section, changelog));
+      await writeFile7(changelog, insertAfterMarker(previous, changelogInsertAfter, section, changelog));
     } else {
       const versionHeading = /^##[ \t]+v?\d+(?:\.\d+){1,2}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?(?:[ \t]+.*)?$/m.exec(previous);
       const heading = /^#[ \t]+[^\r\n]+[ \t]*$/m.exec(previous);
@@ -29360,9 +29641,9 @@ ${release.changelog}
         const prefix = before ? `${before}
 
 ` : "";
-        await writeFile5(changelog, `${prefix}${section}${after}`);
+        await writeFile7(changelog, `${prefix}${section}${after}`);
       } else {
-        await writeFile5(changelog, `${section}${previous}`);
+        await writeFile7(changelog, `${section}${previous}`);
       }
     }
   }
@@ -29374,7 +29655,7 @@ ${release.changelog}
     let readmeAlreadyVersioned = false;
     for (const file of readme) {
       try {
-        const contents = await readFile12(file, "utf8");
+        const contents = await readFile14(file, "utf8");
         readmeFound = true;
         const defaultHeading = void 0 === changelogInsertAfter ? /^==\s*Changelog\s*==\s*$/im.exec(contents)?.[0] : void 0;
         const insertionMarker = changelogInsertAfter ?? defaultHeading;
@@ -29390,7 +29671,7 @@ ${summaries.map((item) => `* ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n")}
 
 `;
           await journal.remember(file);
-          await writeFile5(file, insertAfterMarker(contents, insertionMarker, readmeSection.trimStart(), file));
+          await writeFile7(file, insertAfterMarker(contents, insertionMarker, readmeSection.trimStart(), file));
           readmeUpdated = true;
         }
       } catch (error) {
@@ -29407,7 +29688,7 @@ ${summaries.map((item) => `* ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n")}
 async function readChangelogSection(directory, version) {
   let contents = "";
   try {
-    contents = await readFile12(path6.join(directory, "CHANGELOG.md"), "utf8");
+    contents = await readFile14(path6.join(directory, "CHANGELOG.md"), "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -29424,7 +29705,7 @@ async function readChangelogSection(directory, version) {
 }
 async function getLatestChangelogVersion(directory, fallback) {
   try {
-    const contents = await readFile12(path6.join(directory, "CHANGELOG.md"), "utf8");
+    const contents = await readFile14(path6.join(directory, "CHANGELOG.md"), "utf8");
     const match = /^##\s+(\d+\.\d+\.\d+)(?:\s|$)/m.exec(contents);
     return match?.[1] ?? fallback;
   } catch (error) {
@@ -29448,7 +29729,7 @@ function insertAfterMarker(contents, marker, section, file) {
 // ../../js/wp-release/dist/changeset-dependents.js
 var import_satisfies = __toESM(require_satisfies(), 1);
 var import_valid = __toESM(require_valid(), 1);
-import { readFile as readFile13, writeFile as writeFile6 } from "node:fs/promises";
+import { readFile as readFile15, writeFile as writeFile8 } from "node:fs/promises";
 import path7 from "node:path";
 import { isDeepStrictEqual } from "node:util";
 var DEFAULT_SECTIONS = ["dependencies", "optionalDependencies"];
@@ -29641,13 +29922,13 @@ async function updateDependencyDeclaration(input2) {
     }
     const changed = void 0 !== nextSpec && nextSpec !== spec;
     if (changed) {
-      const contents = await readFile13(file, "utf8");
+      const contents = await readFile15(file, "utf8");
       const declared = new RegExp(`"${escapeRegExp(name)}"\\s*:\\s*"${escapeRegExp(spec)}"`);
       if (!declared.test(contents)) {
         throw new ValidationError(`The dependency spec of "${name}" in ${dependent.name}'s ${file} doesn't match "${spec}"; rewrite it to "${nextSpec}".`);
       }
       await journal.remember(file);
-      await writeFile6(file, contents.replace(declared, `"${name}": "${nextSpec}"`));
+      await writeFile8(file, contents.replace(declared, `"${name}": "${nextSpec}"`));
     }
   }
 }
@@ -29759,7 +30040,7 @@ function isExcludedDependent(dependent, rule) {
 
 // ../../js/wp-release/dist/changeset-files.js
 import { randomUUID as randomUUID2 } from "node:crypto";
-import { access as access4, mkdir as mkdir8, readdir as readdir6, readFile as readFile14, rm as rm8, writeFile as writeFile7 } from "node:fs/promises";
+import { access as access4, mkdir as mkdir10, readdir as readdir6, readFile as readFile16, rm as rm9, writeFile as writeFile9 } from "node:fs/promises";
 import path8 from "node:path";
 async function readChangesets(directory) {
   let entries;
@@ -29771,7 +30052,7 @@ async function readChangesets(directory) {
     }
     throw error;
   }
-  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile14(path8.join(directory, name), "utf8"), name)));
+  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile16(path8.join(directory, name), "utf8"), name)));
 }
 async function readChangesetsSince(repository, directory, changesets, since, uncommitted = false) {
   const relativeDirectory = repository.relativePath(directory);
@@ -29783,7 +30064,7 @@ async function readChangesetsSince(repository, directory, changesets, since, unc
   return changesets.filter((changeset) => changedFiles.has(path8.posix.join(relativeDirectory, changeset.fileName)));
 }
 async function writeChangeset(directory, packages, summary2, name) {
-  await mkdir8(directory, { recursive: true });
+  await mkdir10(directory, { recursive: true });
   const fileName = `${name ?? randomUUID2().slice(0, 8)}.md`;
   const file = path8.join(directory, fileName);
   let exists2 = false;
@@ -29799,7 +30080,7 @@ async function writeChangeset(directory, packages, summary2, name) {
     throw new ValidationError(`Changeset ${fileName} already exists.`);
   }
   const entries = Object.entries(packages).sort((a, b) => a[0].localeCompare(b[0])).map(([pkg, bump]) => `${JSON.stringify(pkg)}: ${bump}`).join("\n");
-  await writeFile7(file, `---
+  await writeFile9(file, `---
 ${entries}
 ---
 
@@ -29811,17 +30092,17 @@ async function consumeChangeset(file, changeset, applied, journal) {
   const remaining = Object.entries(changeset.packages).filter(([name]) => void 0 !== applied && !applied.includes(name));
   await journal.remember(file);
   if (remaining.length) {
-    await writeFile7(file, formatChangeset({
+    await writeFile9(file, formatChangeset({
       packages: Object.fromEntries(remaining),
       summary: changeset.summary
     }));
   } else {
-    await rm8(file);
+    await rm9(file);
   }
 }
 
 // ../../js/wp-release/dist/file-journal.js
-import { readFile as readFile15, rm as rm9, writeFile as writeFile8 } from "node:fs/promises";
+import { readFile as readFile17, rm as rm10, writeFile as writeFile10 } from "node:fs/promises";
 var FileJournal = class {
   /** Original contents by file, undefined for files that didn't exist. */
   files = /* @__PURE__ */ new Map();
@@ -29836,7 +30117,7 @@ var FileJournal = class {
       return;
     }
     try {
-      this.files.set(file, await readFile15(file, "utf8"));
+      this.files.set(file, await readFile17(file, "utf8"));
     } catch (error) {
       if ("ENOENT" !== error.code) {
         throw error;
@@ -29857,9 +30138,9 @@ var FileJournal = class {
     ].reverse()) {
       try {
         if (void 0 === contents) {
-          await rm9(file, { force: true });
+          await rm10(file, { force: true });
         } else {
-          await writeFile8(file, contents);
+          await writeFile10(file, contents);
         }
       } catch (error) {
         errors.push(error instanceof Error ? error : new Error(String(error)));
