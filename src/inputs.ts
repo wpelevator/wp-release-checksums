@@ -73,6 +73,8 @@ export function getChecksumsArgs(): string[] {
 
 	addSelection( args );
 	addValue( args, '--type', input( 'type' ) );
+	addValue( args, '--config', input( 'config' ) );
+	addValue( args, '--checksums-format', input( 'checksums-format' ) );
 	addBoolean( args, '--force', 'force' );
 
 	return args;

@@ -38,3 +38,17 @@ test( 'maps inputs to wp-release checksums flags', () => {
 		'Each set input should map to its CLI flag.'
 	);
 } );
+
+test( 'passes a trusted codec config and an explicit format override', () => {
+	assert.deepEqual(
+		withEnv(
+			{
+				INPUT_CONFIG: 'release.mjs',
+				'INPUT_CHECKSUMS-FORMAT': 'sha256sum',
+			},
+			getChecksumsArgs
+		),
+		[ '--config', 'release.mjs', '--checksums-format', 'sha256sum' ],
+		'The standalone action should select a config and override its codec.'
+	);
+} );

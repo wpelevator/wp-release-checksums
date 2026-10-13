@@ -1,5 +1,5 @@
 name: 'WP Release Checksums'
-description: 'Write the MD5 and SHA-256 hashes of every distributed file of a WordPress plugin or theme to a checksums manifest.'
+description: 'Write a WordPress JSON or GNU SHA-256 checksums manifest of the distributed plugin or theme files.'
 author: 'WP Elevator'
 branding:
   icon: 'check-circle'
@@ -9,6 +9,12 @@ inputs:
   source-dir:
     description: 'Directory to hash. Defaults to the repository root.'
     default: ''
+  config:
+    description: 'Path to a JavaScript release config for integrity.codec. Defaults to the conventional config in the repository root.'
+    default: ''
+  checksums-format:
+    description: 'Manifest format: wordpress-json or sha256sum. Defaults to integrity.codec or wordpress-json; sha256sum defaults to SHA256SUMS.'
+    default: ''
   slug:
     description: 'Plugin or theme slug.'
     default: ${{ github.event.repository.name }}
@@ -16,10 +22,10 @@ inputs:
     description: 'Version for the manifest and its filename. Defaults to the Version header.'
     default: ''
   filename-format:
-    description: 'Filename with {slug} and {version}, followed by .checksums.json. Defaults to {slug}.{version}.'
+    description: 'JSON filename with {slug} and {version}, followed by .checksums.json. Defaults to {slug}.{version}; other codecs use their default filename unless output is set.'
     default: ''
   output:
-    description: 'Path of the manifest. Defaults to the filename in the repository root.'
+    description: 'Path of the manifest. Defaults to the JSON filename or codec filename in the repository root.'
     default: ''
   distignore:
     description: 'Path to the ignore file, or "false" to not read one. Defaults to .distignore in source-dir when present.'
