@@ -28078,6 +28078,16 @@ var TARGET_FLAGS = [
   "svn-url",
   "message"
 ];
+async function runDeploy2(input2, logger2, runner) {
+  const options2 = resolveDeployOptions(input2);
+  const svn = runner ? new Svn({
+    runner,
+    username: options2.svnUsername,
+    password: options2.svnPassword,
+    logger: logger2
+  }) : void 0;
+  return new SvnDeploy(options2, logger2, svn).run();
+}
 function getDeployInputFromArgs(input2) {
   const { values, positionals, cwd } = input2;
   const flag = (name) => getBoolean(values, name) || void 0;
@@ -28182,7 +28192,7 @@ Examples:
     ...packageDeployArgs,
     "dry-run": { type: "boolean" }
   },
-  async run({ values, positionals, cwd, configFile, tagFormat, logger: logger2 }) {
+  async run({ values, positionals, cwd, configFile, tagFormat, logger: logger2, svnRunner }) {
     const { ref, packages, list } = getPackageDeployArgs(values, positionals, TARGET_FLAGS);
     if (ref) {
       const deploys = await getSvnDeploys({
@@ -28193,14 +28203,13 @@ Examples:
         ...configFile ? { configFile } : {},
         ...tagFormat ? { tagFormat } : {}
       });
-      return list ? listPackageDeploys(deploys, logger2, ref) : runPackageDeploys(deploys, (input2) => new SvnDeploy(resolveDeployOptions({
+      return list ? listPackageDeploys(deploys, logger2, ref) : runPackageDeploys(deploys, (input2) => runDeploy2({
         ...input2,
         svnUsername: getString(values, "svn-username"),
         force: getBoolean(values, "force")
-      }), logger2).run(), logger2, ref);
+      }, logger2, svnRunner), logger2, ref);
     }
-    const options2 = resolveDeployOptions(getDeployInputFromArgs({ values, positionals, cwd }));
-    const result = await new SvnDeploy(options2, logger2).run();
+    const result = await runDeploy2(getDeployInputFromArgs({ values, positionals, cwd }), logger2, svnRunner);
     return { exitCode: 0, result };
   }
 };
