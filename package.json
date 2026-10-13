@@ -19,7 +19,7 @@
 	"scripts": {
 		"build": "node build.js",
 		"lint": "npm-run-all lint:*",
-		"lint:js": "wp-scripts lint-js build.js src",
+		"lint:js": "wp-scripts lint-js",
 		"lint:types": "tsc -p tsconfig.json",
 		"format": "wp-scripts format build.js src",
 		"test": "node --test"
