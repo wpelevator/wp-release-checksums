@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - id: checksums
-        uses: wpelevator/wp-release-checksums@0.3.5
+        uses: wpelevator/wp-release-checksums@0.3.6
         with:
           source-dir: dist
 ```
@@ -34,17 +34,17 @@ jobs:
 To ship the signed manifest inside the plugin, so that an installed copy can be verified later, write it into the directory that is zipped and deployed, sign it, and then zip and deploy that directory:
 
 ```yaml
-      - uses: wpelevator/wp-release-checksums@0.3.5
+      - uses: wpelevator/wp-release-checksums@0.3.6
         with:
           source-dir: dist
           output: dist/checksums.json
 
-      - uses: wpelevator/wp-release-sign@0.2.7
+      - uses: wpelevator/wp-release-sign@0.3.0
         with:
           files: dist/checksums.json
           signing-key: ${{ secrets.WP_RELEASE_SIGNING_KEY }}
 
-      - uses: wpelevator/wp-release-zip@0.4.0
+      - uses: wpelevator/wp-release-zip@0.5.0
         with:
           source-dir: dist # Without the checksums input, which would write a second manifest.
 ```
