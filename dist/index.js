@@ -5488,7 +5488,7 @@ var require_body = __commonJS({
         const boundary = `----formdata-undici-0${`${random(1e11)}`.padStart(11, "0")}`;
         const prefix = `--${boundary}\r
 Content-Disposition: form-data`;
-        const escape2 = (str) => str.replace(/\n/g, "%0A").replace(/\r/g, "%0D").replace(/"/g, "%22");
+        const escape3 = (str) => str.replace(/\n/g, "%0A").replace(/\r/g, "%0D").replace(/"/g, "%22");
         const normalizeLinefeeds = (value) => value.replace(/\r?\n|\r/g, "\r\n");
         const blobParts = [];
         const rn = new Uint8Array([13, 10]);
@@ -5496,14 +5496,14 @@ Content-Disposition: form-data`;
         let hasUnknownSizeValue = false;
         for (const [name, value] of object) {
           if (typeof value === "string") {
-            const chunk2 = textEncoder.encode(prefix + `; name="${escape2(normalizeLinefeeds(name))}"\r
+            const chunk2 = textEncoder.encode(prefix + `; name="${escape3(normalizeLinefeeds(name))}"\r
 \r
 ${normalizeLinefeeds(value)}\r
 `);
             blobParts.push(chunk2);
             length += chunk2.byteLength;
           } else {
-            const chunk2 = textEncoder.encode(`${prefix}; name="${escape2(normalizeLinefeeds(name))}"` + (value.name ? `; filename="${escape2(value.name)}"` : "") + `\r
+            const chunk2 = textEncoder.encode(`${prefix}; name="${escape3(normalizeLinefeeds(name))}"` + (value.name ? `; filename="${escape3(value.name)}"` : "") + `\r
 Content-Type: ${value.type || "application/octet-stream"}\r
 \r
 `);
@@ -86686,7 +86686,6 @@ function setOutput(name, value) {
 import { parseArgs } from "node:util";
 
 // ../../js/wp-release/dist/commands/i18n-compile.js
-import { readFile as readFile2 } from "node:fs/promises";
 import { resolve as resolve3 } from "node:path";
 
 // ../../js/wp-release/dist/i18n/compile.js
@@ -87712,9 +87711,9 @@ function aggregateCatalog(extracted, domain, headers = {}, allDomains = false) {
       });
     }
   }
-  const messages = [...entries.values()].sort((a, b) => compareText(JSON.stringify([a.context ?? "", a.id]), JSON.stringify([b.context ?? "", b.id])));
+  const messages = [...entries.values()];
   for (const message2 of messages) {
-    message2.comments = [...new Set(message2.comments)].sort(compareText);
+    message2.comments = [...new Set(message2.comments)];
     message2.flags = [...new Set(message2.flags)].sort(compareText);
     const references = message2.references.map((reference) => ({
       ...reference,
@@ -87725,7 +87724,7 @@ function aggregateCatalog(extracted, domain, headers = {}, allDomains = false) {
         JSON.stringify(reference),
         reference
       ])).values()
-    ].sort((a, b) => compareText(a.file, b.file) || (a.line ?? 0) - (b.line ?? 0) || (a.column ?? 0) - (b.column ?? 0));
+    ];
   }
   return {
     catalog: { domain, headers: { ...headers }, messages },
@@ -88082,6 +88081,27 @@ async function compileTranslations(input2) {
   return result;
 }
 
+// ../../js/wp-release/dist/json-files.js
+import { readFile as readFile2 } from "node:fs/promises";
+async function readJson(file) {
+  try {
+    return JSON.parse(await readFile2(file, "utf8"));
+  } catch (error) {
+    const message2 = error instanceof Error ? error.message : String(error);
+    throw new ValidationError(`Could not read JSON manifest ${file}: ${message2}`);
+  }
+}
+async function readJsonIfExists(file) {
+  try {
+    return JSON.parse(await readFile2(file, "utf8"));
+  } catch (error) {
+    if ("ENOENT" !== error.code) {
+      throw error;
+    }
+    return void 0;
+  }
+}
+
 // ../../js/wp-release/dist/commands/command.js
 function getString(values, name) {
   const value = values[name];
@@ -88127,15 +88147,11 @@ is needed; compilation validates data before independent atomic output writes.`,
       }
       let scriptMap;
       if (map) {
-        try {
-          const parsed = JSON.parse(await readFile2(resolve3(cwd, map), "utf8"));
-          if (!parsed || "object" !== typeof parsed || Array.isArray(parsed)) {
-            throw new Error("Script map must be an object of source paths to runtime path arrays.");
-          }
-          scriptMap = parsed;
-        } catch (error) {
-          throw new ValidationError(`Cannot read script map: ${String(error)}`);
+        const parsed = await readJson(resolve3(cwd, map));
+        if (!parsed || "object" !== typeof parsed || Array.isArray(parsed)) {
+          throw new ValidationError("The script map must be an object of source paths to runtime path arrays.");
         }
+        scriptMap = parsed;
       }
       const result = await compileTranslations({
         sourcePath: resolve3(cwd, positionals[0]),
@@ -90824,8 +90840,11 @@ function validateI18nFileComment(fileComment, label = "i18n.fileComment") {
   }
 }
 function validateI18nHeaders(headers, label = "i18n.headers") {
-  if (!headers || "object" !== typeof headers || Array.isArray(headers) || Object.entries(headers).some(([key, value]) => !/^[A-Za-z][A-Za-z0-9-]*$/.test(key) || "string" !== typeof value || /[\r\n\0]/.test(value))) {
-    throw new ValidationError(`${label} must contain gettext header names and single-line string values.`);
+  if (!headers || "object" !== typeof headers || Array.isArray(headers) || Object.entries(headers).some(([key, value]) => !/^[A-Za-z][A-Za-z0-9-]*$/.test(key) || false !== value && ("string" !== typeof value || /[\r\n\0]/.test(value)))) {
+    throw new ValidationError(`${label} must contain gettext header names with single-line string values, or false to remove a header.`);
+  }
+  if (Object.entries(headers).some(([key, value]) => false === value && "content-type" === key.toLowerCase())) {
+    throw new ValidationError(`${label} can't remove Content-Type, which declares the UTF-8 charset of the catalog.`);
   }
 }
 function resolveI18nOptions(...layers) {
@@ -91381,80 +91400,91 @@ function parseMetadataTranslations(input2, kind) {
 }
 
 // ../../js/wp-release/dist/i18n/pot.js
+var ESCAPES = {
+  "\\": "\\\\",
+  '"': '\\"',
+  "\x07": "\\a",
+  "\b": "\\b",
+  "\f": "\\f",
+  "\n": "\\n",
+  "\r": "\\r",
+  "	": "\\t",
+  "\v": "\\v"
+};
 function serializePot(catalog, options2 = {}) {
   validateI18nHeaders(catalog.headers);
   if (void 0 !== options2.fileComment) {
     validateI18nFileComment(options2.fileComment);
   }
-  const headers = Object.fromEntries(Object.entries(mergeI18nHeaders({
+  const fileComment = void 0 === options2.fileComment ? "" : options2.fileComment.split(/\r\n|\r|\n/).map((line) => `# ${line}
+`).join("");
+  const entries = catalog.messages.map((message2) => serializeMessage(message2, false !== options2.references));
+  return Buffer.from(fileComment + [serializeHeaders(catalog), ...entries].join("\n"));
+}
+function serializeHeaders(catalog) {
+  const defaults2 = {
     "Project-Id-Version": catalog.domain,
     "Report-Msgid-Bugs-To": "",
-    "POT-Creation-Date": "",
-    "PO-Revision-Date": "",
     "Last-Translator": "",
     "Language-Team": "",
-    Language: "",
     "MIME-Version": "1.0",
     "Content-Type": "text/plain; charset=UTF-8",
     "Content-Transfer-Encoding": "8bit",
+    "POT-Creation-Date": "",
+    "PO-Revision-Date": "",
     "X-Domain": catalog.domain
-  }, catalog.headers)).sort(([a], [b]) => compareText(a, b)));
-  const contentType3 = Object.entries(catalog.headers).find(([key]) => "content-type" === key.toLowerCase());
-  let surrogate = "X-Wp-Release-Content-Type";
-  while (Object.keys(headers).some((key) => key.toLowerCase() === surrogate.toLowerCase())) {
-    surrogate += "-Value";
-  }
-  if (contentType3) {
-    headers[surrogate] = contentType3[1];
-    headers[contentType3[0]] = "text/plain; charset=UTF-8";
-  }
-  const table = {
-    charset: "UTF-8",
-    headers,
-    translations: /* @__PURE__ */ Object.create(null)
   };
-  for (const message2 of catalog.messages) {
-    const context = message2.context ?? "";
-    table.translations[context] ??= /* @__PURE__ */ Object.create(null);
-    const references = [
-      ...new Set(message2.references.map((reference) => reference.file + (reference.line ? `:${reference.line}` : "")))
-    ];
-    table.translations[context][message2.id] = {
-      msgid: message2.id,
-      ...void 0 !== message2.context ? { msgctxt: message2.context } : {},
-      ...void 0 !== message2.plural ? { msgid_plural: message2.plural } : {},
-      msgstr: void 0 !== message2.plural ? ["", ""] : [""],
-      comments: {
-        ...message2.comments.length ? { extracted: message2.comments.join("\n") } : {},
-        ...message2.flags.length ? { flag: message2.flags.join(", ") } : {},
-        ...false !== options2.references && references.length ? { reference: references.join("\n") } : {}
-      }
-    };
-  }
-  const bytes = po.compile(table, {
-    foldLength: 0,
-    eol: "\n",
-    sort: (a, b) => compareText(JSON.stringify([a.msgctxt ?? "", a.msgid]), JSON.stringify([b.msgctxt ?? "", b.msgid]))
-  });
-  if (contentType3) {
-    const lines = bytes.toString("utf8").split("\n");
-    const original = lines.find((line) => line.startsWith(`"${surrogate}: `));
-    return withFileComment(Buffer.from(lines.filter((line) => !line.startsWith(`"${surrogate}: `)).map((line) => (
-      // This prefix identifies only the serialized Content-Type header entry.
-      line.startsWith('"Content-Type: ') && original ? original.replace(surrogate, "Content-Type") : line
-    )).join("\n")), options2.fileComment);
-  }
-  return withFileComment(bytes, options2.fileComment);
+  const headers = Object.entries(mergeI18nHeaders(defaults2, catalog.headers)).filter(([, value]) => false !== value).map(([name, value]) => `"${escape2(`${name}: ${value}
+`)}"
+`);
+  return `msgid ""
+msgstr ""
+${headers.join("")}`;
 }
-function withFileComment(bytes, fileComment) {
-  return void 0 === fileComment ? bytes : Buffer.concat([
-    Buffer.from(fileComment.split(/\r\n|\r|\n/).map((line) => `# ${line}
-`).join("")),
-    bytes
-  ]);
+function serializeMessage(message2, references) {
+  const lines = [
+    ...message2.comments.flatMap((comment) => comment.split(/\r\n|\r|\n/).map((line) => `#. ${line}`)),
+    ...references ? [
+      ...new Set(message2.references.map((reference) => `#: ${reference.file}${reference.line ? `:${reference.line}` : ""}`))
+    ] : [],
+    ...message2.flags.length ? [`#, ${message2.flags.join(", ")}`] : [],
+    ...void 0 !== message2.context ? [poString("msgctxt", message2.context)] : [],
+    poString("msgid", message2.id)
+  ];
+  if (void 0 === message2.plural) {
+    lines.push('msgstr ""');
+  } else {
+    lines.push(poString("msgid_plural", message2.plural), 'msgstr[0] ""', 'msgstr[1] ""');
+  }
+  return lines.join("\n") + "\n";
+}
+function poString(keyword, value) {
+  if (!value.includes("\n")) {
+    return `${keyword} "${escape2(value)}"`;
+  }
+  return [
+    `${keyword} ""`,
+    ...value.split(/(?<=\n)/).map((segment) => `"${escape2(segment)}"`)
+  ].join("\n");
+}
+function escape2(value) {
+  return value.replace(/[\\"\x07\b\f\n\r\t\v]/g, (character) => ESCAPES[character] ?? character);
 }
 
 // ../../js/wp-release/dist/i18n/generate.js
+function sourceRank(file) {
+  if (file.endsWith(".php")) {
+    return 0;
+  }
+  if (!file.endsWith(".json")) {
+    return 1;
+  }
+  return file.endsWith("/block.json") || "block.json" === file ? 2 : 3;
+}
+function sortBySourcePosition(messages) {
+  const position = (message2) => message2.references[0];
+  return [...messages].sort((a, b) => (position(a)?.line ?? 0) - (position(b)?.line ?? 0) || (position(a)?.column ?? 0) - (position(b)?.column ?? 0));
+}
 async function extractCatalog(input2) {
   const sourceDir = resolve5(input2.sourceDir);
   const options2 = resolveI18nOptions(input2.options);
@@ -91477,7 +91507,7 @@ async function extractCatalog(input2) {
   const excluded = new Set((input2.outputPaths ?? []).map((file) => resolve5(file)));
   let files = [];
   try {
-    files = (await discoverI18nFiles(sourceDir, options2)).filter((file) => !excluded.has(resolve5(sourceDir, file)));
+    files = (await discoverI18nFiles(sourceDir, options2)).filter((file) => !excluded.has(resolve5(sourceDir, file))).sort((a, b) => sourceRank(a) - sourceRank(b) || compareText(a, b));
   } catch (error) {
     diagnostics.push({
       file: ".",
@@ -91487,6 +91517,18 @@ async function extractCatalog(input2) {
     });
   }
   const messages = [];
+  if (meta) {
+    try {
+      messages.push(...extractHeaderTranslations(meta, await readFile8(join5(sourceDir, meta.mainFile), "utf8"), domain));
+    } catch (error) {
+      diagnostics.push({
+        file: meta.mainFile,
+        code: "unreadable-file",
+        severity: "error",
+        message: String(error)
+      });
+    }
+  }
   for (const file of files) {
     try {
       const contents = await readFile8(join5(sourceDir, file), "utf8");
@@ -91505,7 +91547,7 @@ async function extractCatalog(input2) {
       } else {
         parsed = parseJavascriptTranslations(parseInput);
       }
-      messages.push(...parsed.messages);
+      messages.push(...sortBySourcePosition(parsed.messages));
       diagnostics.push(...parsed.diagnostics);
     } catch (error) {
       diagnostics.push({
@@ -91516,22 +91558,9 @@ async function extractCatalog(input2) {
       });
     }
   }
-  if (meta) {
-    try {
-      messages.push(...extractHeaderTranslations(meta, await readFile8(join5(sourceDir, meta.mainFile), "utf8"), domain));
-    } catch (error) {
-      diagnostics.push({
-        file: meta.mainFile,
-        code: "unreadable-file",
-        severity: "error",
-        message: String(error)
-      });
-    }
-  }
-  const result = aggregateCatalog(messages, domain, {
-    "Project-Id-Version": `${meta?.headers["Plugin Name"] ?? meta?.headers["Theme Name"] ?? domain}${meta?.version ? ` ${meta.version}` : ""}`,
-    ...options2.headers
-  }, options2.allDomains);
+  const result = aggregateCatalog(messages, domain, mergeI18nHeaders({
+    "Project-Id-Version": `${meta?.headers["Plugin Name"] ?? meta?.headers["Theme Name"] ?? domain}${meta?.version ? ` ${meta.version}` : ""}`
+  }, options2.headers), options2.allDomains);
   return {
     ...result,
     diagnostics: [...diagnostics, ...result.diagnostics],
@@ -91977,29 +92006,8 @@ function validateVersionDescriptor(descriptor, location, isTarget) {
 import { readdir as readdir5 } from "node:fs/promises";
 import path4 from "node:path";
 
-// ../../js/wp-release/dist/json-files.js
-import { readFile as readFile9 } from "node:fs/promises";
-async function readJson(file) {
-  try {
-    return JSON.parse(await readFile9(file, "utf8"));
-  } catch (error) {
-    const message2 = error instanceof Error ? error.message : String(error);
-    throw new ValidationError(`Could not read JSON manifest ${file}: ${message2}`);
-  }
-}
-async function readJsonIfExists(file) {
-  try {
-    return JSON.parse(await readFile9(file, "utf8"));
-  } catch (error) {
-    if ("ENOENT" !== error.code) {
-      throw error;
-    }
-    return void 0;
-  }
-}
-
 // ../../js/wp-release/dist/version-files.js
-import { access as access3, readFile as readFile11, writeFile as writeFile4 } from "node:fs/promises";
+import { access as access3, readFile as readFile10, writeFile as writeFile4 } from "node:fs/promises";
 import path3 from "node:path";
 
 // ../../js/wp-release/dist/tag-format.js
@@ -92013,7 +92021,7 @@ function formatTag(format, pkg, version) {
 
 // ../../js/wp-release/dist/version-check.js
 var import_ignore2 = __toESM(require_ignore(), 1);
-import { readFile as readFile10 } from "node:fs/promises";
+import { readFile as readFile9 } from "node:fs/promises";
 import { join as join6 } from "node:path";
 
 // ../../js/wp-release/dist/deploy-options.js
@@ -92188,7 +92196,7 @@ async function compareConstants(sourceDir, constants3, expected) {
   const files = constants3.length ? await selectFiles(sourceDir, (0, import_ignore2.default)().add(CONSTANT_SEARCH_IGNORE)) : [];
   const sources = await Promise.all(files.filter((file) => file.endsWith(".php")).map(async (file) => ({
     file,
-    contents: await readFile10(join6(sourceDir, file), "utf8")
+    contents: await readFile9(join6(sourceDir, file), "utf8")
   })));
   return constants3.flatMap((name) => {
     const source = `Constant ${name}`;
@@ -92257,7 +92265,7 @@ async function findVersionMismatches(input2) {
     checkStableTag && readme ? compareVersion({
       source: "Stable tag",
       file: readme.file,
-      line: findReadmeHeaderLine(await readFile10(join6(sourceDir, readme.file), "utf8"), "Stable tag"),
+      line: findReadmeHeaderLine(await readFile9(join6(sourceDir, readme.file), "utf8"), "Stable tag"),
       actual: readme.headers["Stable tag"] ?? null
     }, expected) : null,
     ...await compareConstants(sourceDir, constants3, expected),
@@ -92377,7 +92385,7 @@ async function readVersion(repository, directory, descriptor, pkg) {
   }
   if ("php-constant" === descriptor.kind) {
     const file2 = path3.join(directory, descriptor.file);
-    const contents2 = await readFile11(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const versions = findConstantValues(contents2, descriptor.constant);
     if (versions[0]) {
       return versions[0];
@@ -92385,7 +92393,7 @@ async function readVersion(repository, directory, descriptor, pkg) {
     throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
   }
   const file = path3.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile11(file, "utf8");
+  const contents = await readFile10(file, "utf8");
   const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
   const match2 = new RegExp(`^\\s*\\*?\\s*${label}:\\s*([^\\r\\n]+)`, "im").exec(contents);
   if (!match2) {
@@ -92396,7 +92404,7 @@ async function readVersion(repository, directory, descriptor, pkg) {
 async function writeVersion(directory, descriptor, version, journal) {
   if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
     const file2 = path3.join(directory, descriptor.file);
-    const contents2 = await readFile11(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const manifest = JSON.parse(contents2);
     if ("composer-json" === descriptor.kind && descriptor.ifPresent && !Object.hasOwn(manifest, descriptor.field)) {
       return;
@@ -92409,7 +92417,7 @@ async function writeVersion(directory, descriptor, version, journal) {
   }
   if ("php-constant" === descriptor.kind) {
     const file2 = path3.join(directory, descriptor.file);
-    const contents2 = await readFile11(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const constant = escapeRegExp(descriptor.constant);
     const definePattern = new RegExp(`(\\bdefine\\s*\\(\\s*(['"])${constant}\\2\\s*,\\s*)(['"])(.*?)\\3`, "g");
     const declarationPattern = new RegExp(`(\\bconst\\s+${constant}\\s*=\\s*)(['"])(.*?)\\2`, "g");
@@ -92425,7 +92433,7 @@ async function writeVersion(directory, descriptor, version, journal) {
     return;
   }
   const file = path3.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile11(file, "utf8");
+  const contents = await readFile10(file, "utf8");
   const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
   const expression = new RegExp(`(^\\s*\\*?\\s*${label}:\\s*)[^\\r\\n]+`, "im");
   if (!expression.test(contents)) {
@@ -92846,9 +92854,13 @@ async function resolveI18nPackages(input2) {
       cwd: input2.cwd
     });
     const configured = await discoverConfiguredPackages(repository, loaded.config);
-    const selected = input2.package ? configured.filter((pkg) => [pkg.name, pkg.path].includes(input2.package)) : configured;
-    if (input2.package && !selected.length) {
-      throw new ValidationError(`Unknown package: ${input2.package}.`);
+    let selected = configured;
+    if (input2.package) {
+      const match2 = findPackage(configured, input2.package);
+      if (!match2) {
+        throw new ValidationError(`Unknown package: ${input2.package}.`);
+      }
+      selected = [match2];
     }
     for (const pkg of selected) {
       const options2 = resolveI18nOptions(loaded.config.i18n, pkg.group.i18n, input2.options);
@@ -92900,10 +92912,14 @@ function cliOptions(values) {
   const headers = {};
   for (const header of getStrings(values, "header")) {
     const index = header.indexOf("=");
-    if (index < 1) {
-      throw new ValidationError("--header requires NAME=VALUE, with an empty value allowed.");
+    if (0 === index || !header) {
+      throw new ValidationError("--header requires NAME=VALUE, with an empty value allowed, or NAME to remove the header.");
     }
-    headers[header.slice(0, index)] = header.slice(index + 1);
+    if (-1 === index) {
+      headers[header] = false;
+    } else {
+      headers[header.slice(0, index)] = header.slice(index + 1);
+    }
   }
   const domain = getString(values, "domain");
   const destination = getString(values, "destination");
@@ -92945,7 +92961,7 @@ function createI18nCommand(operation) {
   --include <glob>       Repeatable source globs, replacing inherited includes
   --exclude <glob>       Repeatable exclusion globs, replacing inherited excludes
   --destination <dir>    Package-relative POT directory
-  --header <NAME=VALUE>  Repeatable gettext header override
+  --header <NAME=VALUE>  Repeatable gettext header override; NAME alone removes it
 ${"pot" === operation ? "  --file-comment <text>  Static comment prepended to the POT\n" : ""}
   --no-references        Omit source references
   --no-legacy-globals    JS requires imports or wp.i18n calls
@@ -93126,12 +93142,12 @@ function getArtifactSigning(values, paths) {
 import { basename as basename9, dirname as dirname5, resolve as resolve13, sep as sep3 } from "node:path";
 
 // ../../js/wp-release/dist/integrity.js
-import { readFile as readFile13 } from "node:fs/promises";
+import { readFile as readFile12 } from "node:fs/promises";
 import { basename as basename6 } from "node:path";
 
 // ../../js/wp-release/dist/checksums.js
 import { createReadStream as createReadStream2 } from "node:fs";
-import { mkdir as mkdir3, readFile as readFile12, writeFile as writeFile5 } from "node:fs/promises";
+import { mkdir as mkdir3, readFile as readFile11, writeFile as writeFile5 } from "node:fs/promises";
 import { createHash as createHash4 } from "node:crypto";
 import { dirname as dirname3, join as join7 } from "node:path";
 var CHECKSUMS_EXTENSION = ".checksums.json";
@@ -93182,7 +93198,7 @@ async function writeChecksums(path12, manifest, force = false) {
   }
 }
 async function readChecksums(path12) {
-  const contents = await readFile12(path12, "utf8").catch((error) => {
+  const contents = await readFile11(path12, "utf8").catch((error) => {
     throw isErrorCode(error, "ENOENT") ? new ValidationError(`Checksums file ${path12} doesn't exist.`) : error;
   });
   return parseChecksums(contents, path12);
@@ -93303,7 +93319,7 @@ function checkChecksumsFile(file) {
 }
 async function readIntegrity(path12, codec) {
   const selected = resolveManifestCodec(codec ?? (basename6(path12) === "SHA256SUMS" ? "sha256sum" : "wordpress-json"));
-  const manifest = selected === wordpressCodec ? await readChecksums(path12) : await selected.decode(await readFile13(path12));
+  const manifest = selected === wordpressCodec ? await readChecksums(path12) : await selected.decode(await readFile12(path12));
   return parseChecksums(JSON.stringify(manifest), path12);
 }
 async function encodeIntegrity(codec, manifest) {
@@ -93586,7 +93602,7 @@ function formatFilename(format, values) {
 }
 
 // ../../js/wp-release/dist/package-zip.js
-import { mkdir as mkdir4, mkdtemp, readFile as readFile14, rm as rm4, writeFile as writeFile6 } from "node:fs/promises";
+import { mkdir as mkdir4, mkdtemp, readFile as readFile13, rm as rm4, writeFile as writeFile6 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename as basename8, dirname as dirname4, join as join9, resolve as resolve11 } from "node:path";
 
@@ -93750,7 +93766,7 @@ async function zipPackage(input2) {
       if (input2.embedChecksums) {
         entries[file] = bytes;
         for (const format of input2.signChecksums ?? []) {
-          entries[getSignaturePath(file, format)] = await readFile14(getSignaturePath(stagedFile, format));
+          entries[getSignaturePath(file, format)] = await readFile13(getSignaturePath(stagedFile, format));
         }
       } else if (checksumsPath) {
         await mkdir4(dirname4(checksumsPath), { recursive: true });
@@ -93758,7 +93774,7 @@ async function zipPackage(input2) {
           flag: force ? "w" : "wx"
         });
         for (const format of input2.signChecksums ?? []) {
-          await writeFile6(getSignaturePath(checksumsPath, format), await readFile14(getSignaturePath(stagedFile, format)), { flag: force ? "w" : "wx" });
+          await writeFile6(getSignaturePath(checksumsPath, format), await readFile13(getSignaturePath(stagedFile, format)), { flag: force ? "w" : "wx" });
         }
       }
     }
@@ -94493,7 +94509,7 @@ since the same key signs every format of "wp-release sign".`,
 
 // ../../js/wp-release/dist/commands/verify.js
 import { existsSync as existsSync4 } from "node:fs";
-import { mkdir as mkdir8, mkdtemp as mkdtemp3, readFile as readFile15, rm as rm6 } from "node:fs/promises";
+import { mkdir as mkdir8, mkdtemp as mkdtemp3, readFile as readFile14, rm as rm6 } from "node:fs/promises";
 import { tmpdir as tmpdir2 } from "node:os";
 import { basename as basename12, isAbsolute as isAbsolute6, join as join12, posix as posix4, resolve as resolve18 } from "node:path";
 
@@ -94677,7 +94693,7 @@ function checkExplicitPairs(pairs, manifest) {
   });
 }
 async function hasSameContents(original, file) {
-  return resolve18(original) === resolve18(file) || (await readFile15(original)).equals(await readFile15(file));
+  return resolve18(original) === resolve18(file) || (await readFile14(original)).equals(await readFile14(file));
 }
 async function checkEmbeddedCopies(input2) {
   const { dir, manifest, checksumsPath, embedded, format } = input2;
@@ -95335,7 +95351,7 @@ var Svn = class {
 
 // ../../js/wp-release/dist/sync.js
 var import_ignore3 = __toESM(require_ignore(), 1);
-import { copyFile as copyFile3, mkdir as mkdir9, readdir as readdir6, readFile as readFile16, rm as rm7, rmdir as rmdir2, stat as stat5 } from "node:fs/promises";
+import { copyFile as copyFile3, mkdir as mkdir9, readdir as readdir6, readFile as readFile15, rm as rm7, rmdir as rmdir2, stat as stat5 } from "node:fs/promises";
 import { dirname as dirname9, join as join13 } from "node:path";
 var SVN_DIRECTORY = ".svn";
 async function isSameFile(source, target) {
@@ -95350,8 +95366,8 @@ async function isSameFile(source, target) {
     return false;
   }
   const [sourceContents, targetContents] = await Promise.all([
-    readFile16(source),
-    readFile16(target)
+    readFile15(source),
+    readFile15(target)
   ]);
   return sourceContents.equals(targetContents);
 }
@@ -97145,7 +97161,7 @@ async function resolveSingleProjectConfig(cwd, options2 = {}, tagFormat) {
 import path11 from "node:path";
 
 // ../../js/wp-release/dist/changelog.js
-import { readFile as readFile17, writeFile as writeFile8 } from "node:fs/promises";
+import { readFile as readFile16, writeFile as writeFile8 } from "node:fs/promises";
 import path8 from "node:path";
 async function getVersionedReleases(repository, config, releases, changesetDirectory) {
   const commits = /* @__PURE__ */ new Map();
@@ -97212,7 +97228,7 @@ ${release.changelog}
   const changelog = path8.join(directory, "CHANGELOG.md");
   let previous = "";
   try {
-    previous = await readFile17(changelog, "utf8");
+    previous = await readFile16(changelog, "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -97247,7 +97263,7 @@ ${release.changelog}
     let readmeAlreadyVersioned = false;
     for (const file of readme) {
       try {
-        const contents = await readFile17(file, "utf8");
+        const contents = await readFile16(file, "utf8");
         readmeFound = true;
         const defaultHeading = void 0 === changelogInsertAfter ? /^==\s*Changelog\s*==\s*$/im.exec(contents)?.[0] : void 0;
         const insertionMarker = changelogInsertAfter ?? defaultHeading;
@@ -97280,7 +97296,7 @@ ${summaries.map((item) => `* ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n")}
 async function readChangelogSection(directory, version) {
   let contents = "";
   try {
-    contents = await readFile17(path8.join(directory, "CHANGELOG.md"), "utf8");
+    contents = await readFile16(path8.join(directory, "CHANGELOG.md"), "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -97297,7 +97313,7 @@ async function readChangelogSection(directory, version) {
 }
 async function getLatestChangelogVersion(directory, fallback) {
   try {
-    const contents = await readFile17(path8.join(directory, "CHANGELOG.md"), "utf8");
+    const contents = await readFile16(path8.join(directory, "CHANGELOG.md"), "utf8");
     const match2 = /^##\s+(\d+\.\d+\.\d+)(?:\s|$)/m.exec(contents);
     return match2?.[1] ?? fallback;
   } catch (error) {
@@ -97321,7 +97337,7 @@ function insertAfterMarker(contents, marker, section, file) {
 // ../../js/wp-release/dist/changeset-dependents.js
 var import_satisfies = __toESM(require_satisfies(), 1);
 var import_valid = __toESM(require_valid(), 1);
-import { readFile as readFile18, writeFile as writeFile9 } from "node:fs/promises";
+import { readFile as readFile17, writeFile as writeFile9 } from "node:fs/promises";
 import path9 from "node:path";
 import { isDeepStrictEqual } from "node:util";
 var DEFAULT_SECTIONS = ["dependencies", "optionalDependencies"];
@@ -97514,7 +97530,7 @@ async function updateDependencyDeclaration(input2) {
     }
     const changed = void 0 !== nextSpec && nextSpec !== spec;
     if (changed) {
-      const contents = await readFile18(file, "utf8");
+      const contents = await readFile17(file, "utf8");
       const declared = new RegExp(`"${escapeRegExp(name)}"\\s*:\\s*"${escapeRegExp(spec)}"`);
       if (!declared.test(contents)) {
         throw new ValidationError(`The dependency spec of "${name}" in ${dependent.name}'s ${file} doesn't match "${spec}"; rewrite it to "${nextSpec}".`);
@@ -97632,7 +97648,7 @@ function isExcludedDependent(dependent, rule) {
 
 // ../../js/wp-release/dist/changeset-files.js
 import { randomUUID as randomUUID3 } from "node:crypto";
-import { access as access4, mkdir as mkdir11, readdir as readdir8, readFile as readFile19, rm as rm10, writeFile as writeFile10 } from "node:fs/promises";
+import { access as access4, mkdir as mkdir11, readdir as readdir8, readFile as readFile18, rm as rm10, writeFile as writeFile10 } from "node:fs/promises";
 import path10 from "node:path";
 async function readChangesets(directory) {
   let entries;
@@ -97644,7 +97660,7 @@ async function readChangesets(directory) {
     }
     throw error;
   }
-  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile19(path10.join(directory, name), "utf8"), name)));
+  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile18(path10.join(directory, name), "utf8"), name)));
 }
 async function readChangesetsSince(repository, directory, changesets, since, uncommitted = false) {
   const relativeDirectory = repository.relativePath(directory);
@@ -97694,7 +97710,7 @@ async function consumeChangeset(file, changeset, applied, journal) {
 }
 
 // ../../js/wp-release/dist/file-journal.js
-import { readFile as readFile20, rm as rm11, writeFile as writeFile11 } from "node:fs/promises";
+import { readFile as readFile19, rm as rm11, writeFile as writeFile11 } from "node:fs/promises";
 var FileJournal = class {
   /** Original contents by file, undefined for files that didn't exist. */
   files = /* @__PURE__ */ new Map();
@@ -97709,7 +97725,7 @@ var FileJournal = class {
       return;
     }
     try {
-      this.files.set(file, await readFile20(file, "utf8"));
+      this.files.set(file, await readFile19(file, "utf8"));
     } catch (error) {
       if ("ENOENT" !== error.code) {
         throw error;
