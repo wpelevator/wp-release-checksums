@@ -19746,13 +19746,13 @@ var require_ignore = __commonJS({
         const rules = this._rules;
         const { length } = rules;
         const shortcut = this._basenameCount * 2 >= length;
-        const basename6 = shortcut ? basenameOf(path11) : path11;
+        const basename7 = shortcut ? basenameOf(path11) : path11;
         for (let index = 0; index < length; index++) {
           const rule = rules[index];
           const { negative } = rule;
           const skip = unignored === negative && ignored !== unignored || negative && !ignored && !unignored && !checkUnignored;
           if (!skip && rule[mode].test(
-            shortcut && rule._basenameOnly ? basename6 : path11
+            shortcut && rule._basenameOnly ? basename7 : path11
           )) {
             ignored = !negative;
             unignored = negative;
@@ -21455,7 +21455,7 @@ var require_yauzl = __commonJS({
       if (options2.autoClose == null) options2.autoClose = true;
       if (options2.lazyEntries == null) options2.lazyEntries = false;
       if (options2.decodeStrings == null) options2.decodeStrings = true;
-      var decodeStrings = !!options2.decodeStrings;
+      var decodeStrings2 = !!options2.decodeStrings;
       if (options2.validateEntrySizes == null) options2.validateEntrySizes = true;
       if (options2.strictFileNames == null) options2.strictFileNames = false;
       if (callback == null) callback = defaultCallback;
@@ -21483,7 +21483,7 @@ var require_yauzl = __commonJS({
           if (commentLength !== expectedCommentLength) {
             return callback(new Error("Invalid comment length. Expected: " + expectedCommentLength + ". Found: " + commentLength + ". Are there extra bytes at the end of the file? Or is the end of central dir signature `PK\u263A\u263B` in the comment?"));
           }
-          var comment = decodeStrings ? decodeBuffer(eocdrBuffer.subarray(22), false) : eocdrBuffer.subarray(22);
+          var comment = decodeStrings2 ? decodeBuffer(eocdrBuffer.subarray(22), false) : eocdrBuffer.subarray(22);
           if (i - zip64EocdlSize >= 0 && buffer.readUInt32LE(i - zip64EocdlSize) === 117853008) {
             var zip64EocdlBuffer = buffer.subarray(i - zip64EocdlSize, i - zip64EocdlSize + zip64EocdlSize);
             var zip64EocdrOffset = readUInt64LE(zip64EocdlBuffer, 8);
@@ -21499,19 +21499,19 @@ var require_yauzl = __commonJS({
               }
               entryCount = readUInt64LE(zip64EocdrBuffer, 32);
               centralDirectoryOffset = readUInt64LE(zip64EocdrBuffer, 48);
-              return callback(null, new ZipFile(reader, centralDirectoryOffset, totalSize, entryCount, comment, options2.autoClose, options2.lazyEntries, decodeStrings, options2.validateEntrySizes, options2.strictFileNames));
+              return callback(null, new ZipFile(reader, centralDirectoryOffset, totalSize, entryCount, comment, options2.autoClose, options2.lazyEntries, decodeStrings2, options2.validateEntrySizes, options2.strictFileNames));
             });
           }
           if (diskNumber !== 0) {
             return callback(new Error("multi-disk zip files are not supported: found disk number: " + diskNumber));
           }
-          return callback(null, new ZipFile(reader, centralDirectoryOffset, totalSize, entryCount, comment, options2.autoClose, options2.lazyEntries, decodeStrings, options2.validateEntrySizes, options2.strictFileNames));
+          return callback(null, new ZipFile(reader, centralDirectoryOffset, totalSize, entryCount, comment, options2.autoClose, options2.lazyEntries, decodeStrings2, options2.validateEntrySizes, options2.strictFileNames));
         }
         callback(new Error("End of central directory record signature not found. Either not a zip file, or file is truncated."));
       });
     }
     util.inherits(ZipFile, EventEmitter);
-    function ZipFile(reader, centralDirectoryOffset, fileSize, entryCount, comment, autoClose, lazyEntries, decodeStrings, validateEntrySizes, strictFileNames) {
+    function ZipFile(reader, centralDirectoryOffset, fileSize, entryCount, comment, autoClose, lazyEntries, decodeStrings2, validateEntrySizes, strictFileNames) {
       var self = this;
       EventEmitter.call(self);
       self.reader = reader;
@@ -21528,7 +21528,7 @@ var require_yauzl = __commonJS({
       self.entriesRead = 0;
       self.autoClose = !!autoClose;
       self.lazyEntries = !!lazyEntries;
-      self.decodeStrings = !!decodeStrings;
+      self.decodeStrings = !!decodeStrings2;
       self.validateEntrySizes = !!validateEntrySizes;
       self.strictFileNames = !!strictFileNames;
       self.isOpen = true;
@@ -23833,7 +23833,7 @@ import { parseArgs } from "node:util";
 
 // ../../js/wp-release/dist/commands/zip.js
 import { existsSync as existsSync3 } from "node:fs";
-import { basename as basename2, resolve as resolve5 } from "node:path";
+import { basename as basename3, resolve as resolve5 } from "node:path";
 
 // ../../js/wp-release/dist/checksums.js
 import { createReadStream } from "node:fs";
@@ -24524,7 +24524,7 @@ function getSignSummary(context, result) {
   return joinBlocks([
     "### Signatures",
     formatList(result.signatures.map((path11) => formatFile(context, path11))),
-    `Public key: ${formatCode(result.publicKey)}`
+    ...result.formats.map((format) => `Public key (${format}): ${formatCode(result.publicKeys[format])}`)
   ]);
 }
 function getVerifySummary(context, result) {
@@ -24677,16 +24677,179 @@ import { stat as stat2 } from "node:fs/promises";
 import { isAbsolute as isAbsolute3, relative as relative3, resolve as resolve4 } from "node:path";
 
 // ../../js/wp-release/dist/signing.js
-import { createHash as createHash2, createPrivateKey, generateKeyPairSync, createPublicKey, sign, verify } from "node:crypto";
+import { createPrivateKey, generateKeyPairSync, sign as sign3, verify as verify3 } from "node:crypto";
+import { readFile as readFile6, writeFile as writeFile3 } from "node:fs/promises";
+
+// ../../js/wp-release/dist/ed25519.js
+import { createHash as createHash2, createPublicKey } from "node:crypto";
 import { createReadStream as createReadStream2 } from "node:fs";
-import { readFile as readFile4, writeFile as writeFile3 } from "node:fs/promises";
+var PUBLIC_KEY_BYTES = 32;
+var SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+function getRawPublicKey(key) {
+  return ("private" === key.type ? createPublicKey(key) : key).export({ format: "der", type: "spki" }).subarray(SPKI_PREFIX.length);
+}
+function createRawPublicKey(bytes) {
+  return createPublicKey({
+    key: Buffer.concat([SPKI_PREFIX, bytes]),
+    format: "der",
+    type: "spki"
+  });
+}
+async function digestFile(path11, algorithm) {
+  const hash = createHash2(algorithm);
+  for await (const chunk of createReadStream2(path11)) {
+    hash.update(chunk);
+  }
+  return hash.digest();
+}
+
+// ../../js/wp-release/dist/minisign.js
+import { createHash as createHash3, sign, verify } from "node:crypto";
+import { readFile as readFile4 } from "node:fs/promises";
+import { basename as basename2 } from "node:path";
+var MINISIGN_EXTENSION = ".minisig";
+var KEY_ALGORITHM = "Ed";
+var HASHED_ALGORITHM = "ED";
+var KEY_ID_BYTES = 8;
+var SIGNATURE_BYTES = 64;
+var UNTRUSTED_PREFIX = "untrusted comment: ";
+var TRUSTED_PREFIX = "trusted comment: ";
+function getKeyId(publicKey) {
+  return createHash3("blake2b512").update(publicKey).digest().subarray(0, KEY_ID_BYTES);
+}
+function formatKeyId(keyId) {
+  return Buffer.from(keyId).reverse().toString("hex").toUpperCase();
+}
+function getMinisignPublicKey(key) {
+  const publicKey = getRawPublicKey(key);
+  return Buffer.concat([
+    Buffer.from(KEY_ALGORITHM),
+    getKeyId(publicKey),
+    publicKey
+  ]).toString("base64");
+}
+function parseMinisignPublicKey(encoded) {
+  const line = encoded.trim().split("\n").map((text) => text.trim()).filter((text) => text && !text.startsWith(UNTRUSTED_PREFIX));
+  const bytes = Buffer.from(line.join(""), "base64");
+  const isMinisign = 1 === line.length && 2 + KEY_ID_BYTES + PUBLIC_KEY_BYTES === bytes.length && KEY_ALGORITHM === bytes.subarray(0, 2).toString();
+  return isMinisign ? bytes.subarray(2 + KEY_ID_BYTES) : null;
+}
+async function createMinisignSignature(path11, privateKey) {
+  const keyId = getKeyId(getRawPublicKey(privateKey));
+  const signature = sign(null, await digestFile(path11, "blake2b512"), privateKey);
+  const name = basename2(path11).replace(/[\r\n]/g, " ");
+  const trustedComment = `timestamp:${Math.floor(Date.now() / 1e3)}	file:${name}	hashed`;
+  const globalSignature = sign(null, Buffer.concat([signature, Buffer.from(trustedComment)]), privateKey);
+  return [
+    `${UNTRUSTED_PREFIX}signature from wp-release key ${formatKeyId(keyId)}`,
+    Buffer.concat([
+      Buffer.from(HASHED_ALGORITHM),
+      keyId,
+      signature
+    ]).toString("base64"),
+    `${TRUSTED_PREFIX}${trustedComment}`,
+    globalSignature.toString("base64"),
+    ""
+  ].join("\n");
+}
+async function verifyMinisignSignature(path11, signaturePath, publicKey) {
+  const [, encoded = "", trusted = "", encodedGlobal = ""] = (await readFile4(signaturePath, "utf8")).split("\n").map((line) => line.trim());
+  const bytes = Buffer.from(encoded, "base64");
+  const algorithm = bytes.subarray(0, 2).toString();
+  const signature = bytes.subarray(2 + KEY_ID_BYTES);
+  const isValidShape = 2 + KEY_ID_BYTES + SIGNATURE_BYTES === bytes.length && [HASHED_ALGORITHM, KEY_ALGORITHM].includes(algorithm) && trusted.startsWith(TRUSTED_PREFIX);
+  return isValidShape && verify(null, HASHED_ALGORITHM === algorithm ? await digestFile(path11, "blake2b512") : await readFile4(path11), publicKey, signature) && verify(null, Buffer.concat([
+    signature,
+    Buffer.from(trusted.slice(TRUSTED_PREFIX.length))
+  ]), publicKey, Buffer.from(encodedGlobal, "base64"));
+}
+
+// ../../js/wp-release/dist/ssh-signature.js
+import { sign as sign2, verify as verify2 } from "node:crypto";
+import { readFile as readFile5 } from "node:fs/promises";
+var SSH_SIGNATURE_EXTENSION = ".sshsig";
+var SSH_SIGNATURE_NAMESPACE = "file";
+var KEY_TYPE = "ssh-ed25519";
+var MAGIC = Buffer.from("SSHSIG");
+var VERSION = 1;
+var HASH_ALGORITHM = "sha512";
+var ARMOR_BEGIN = "-----BEGIN SSH SIGNATURE-----";
+var ARMOR_END = "-----END SSH SIGNATURE-----";
+var ARMOR_LINE_LENGTH = 70;
+function encodeString(value) {
+  const bytes = Buffer.from(value);
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(bytes.length);
+  return Buffer.concat([length, bytes]);
+}
+function decodeStrings(bytes) {
+  const strings = [];
+  let offset = 0;
+  while (offset + 4 <= bytes.length) {
+    const end = offset + 4 + bytes.readUInt32BE(offset);
+    strings.push(bytes.subarray(offset + 4, end));
+    offset = end;
+  }
+  return offset === bytes.length ? strings : null;
+}
+function encodePublicKey(publicKey) {
+  return Buffer.concat([
+    encodeString(KEY_TYPE),
+    encodeString(publicKey)
+  ]);
+}
+function getSignedData(digest, namespace, hashAlgorithm) {
+  return Buffer.concat([
+    MAGIC,
+    encodeString(namespace),
+    encodeString(""),
+    encodeString(hashAlgorithm),
+    encodeString(digest)
+  ]);
+}
+function getSshPublicKey(key) {
+  return `${KEY_TYPE} ${encodePublicKey(getRawPublicKey(key)).toString("base64")}`;
+}
+function parseSshPublicKey(encoded) {
+  const [type, blob = ""] = encoded.trim().split(/\s+/);
+  const [blobType, publicKey] = decodeStrings(Buffer.from(blob, "base64")) ?? [];
+  const isSsh = KEY_TYPE === type && KEY_TYPE === blobType?.toString() && PUBLIC_KEY_BYTES === publicKey?.length;
+  return isSsh && publicKey ? publicKey : null;
+}
+async function createSshSignature(path11, privateKey) {
+  const signature = sign2(null, getSignedData(await digestFile(path11, HASH_ALGORITHM), SSH_SIGNATURE_NAMESPACE, HASH_ALGORITHM), privateKey);
+  const version = Buffer.alloc(4);
+  version.writeUInt32BE(VERSION);
+  const encoded = Buffer.concat([
+    MAGIC,
+    version,
+    encodeString(encodePublicKey(getRawPublicKey(privateKey))),
+    encodeString(SSH_SIGNATURE_NAMESPACE),
+    encodeString(""),
+    encodeString(HASH_ALGORITHM),
+    encodeString(Buffer.concat([
+      encodeString(KEY_TYPE),
+      encodeString(signature)
+    ]))
+  ]).toString("base64");
+  const lines = encoded.match(new RegExp(`.{1,${ARMOR_LINE_LENGTH}}`, "g"));
+  return [ARMOR_BEGIN, ...lines ?? [], ARMOR_END, ""].join("\n");
+}
+async function verifySshSignature(path11, signaturePath, publicKey) {
+  const armored = (await readFile5(signaturePath, "utf8")).trim();
+  const bytes = Buffer.from(armored.slice(ARMOR_BEGIN.length, -ARMOR_END.length), "base64");
+  const [signer, namespace, reserved, hashAlgorithm = Buffer.alloc(0), signatureBlob = Buffer.alloc(0)] = decodeStrings(bytes.subarray(MAGIC.length + 4)) ?? [];
+  const [signatureType, signature] = decodeStrings(signatureBlob) ?? [];
+  const isValidShape = armored.startsWith(ARMOR_BEGIN) && armored.endsWith(ARMOR_END) && bytes.length > MAGIC.length + 4 && MAGIC.equals(bytes.subarray(0, MAGIC.length)) && VERSION === bytes.readUInt32BE(MAGIC.length) && signer?.equals(encodePublicKey(getRawPublicKey(publicKey))) && SSH_SIGNATURE_NAMESPACE === namespace?.toString() && 0 === reserved?.length && ["sha512", "sha256"].includes(hashAlgorithm.toString()) && KEY_TYPE === signatureType?.toString() && void 0 !== signature;
+  return Boolean(isValidShape) && verify2(null, getSignedData(await digestFile(path11, hashAlgorithm.toString()), SSH_SIGNATURE_NAMESPACE, hashAlgorithm.toString()), publicKey, signature ?? Buffer.alloc(0));
+}
+
+// ../../js/wp-release/dist/signing.js
 var SIGNATURE_EXTENSION = ".sig";
 var SIGNING_KEY_ENV = "WP_RELEASE_SIGNING_KEY";
 var SEED_BYTES = 32;
 var SECRET_KEY_BYTES = 64;
-var PUBLIC_KEY_BYTES = 32;
 var PKCS8_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
-var SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 function generateSigningKeyPair() {
   const { privateKey, publicKey } = generateKeyPairSync("ed25519");
   const privateJwk = privateKey.export({ format: "jwk" });
@@ -24696,7 +24859,8 @@ function generateSigningKeyPair() {
   }
   return {
     privateKey: Buffer.from(privateJwk.d, "base64url").toString("base64"),
-    publicKey: Buffer.from(publicJwk.x, "base64url").toString("base64")
+    publicKey: Buffer.from(publicJwk.x, "base64url").toString("base64"),
+    publicKeys: getPublicKeys(publicKey)
   };
 }
 function decodeKey(value) {
@@ -24714,47 +24878,72 @@ function parseSigningKey(encoded) {
   });
 }
 function parsePublicKey(encoded) {
-  const bytes = decodeKey(encoded);
+  const bytes = parseSshPublicKey(encoded) ?? parseMinisignPublicKey(encoded) ?? decodeKey(encoded);
   if (PUBLIC_KEY_BYTES !== bytes.length) {
-    throw new ValidationError(`The public key must be a base64 ${PUBLIC_KEY_BYTES}-byte Ed25519 key, got ${bytes.length} bytes.`);
+    throw new ValidationError(`The public key must be a base64 ${PUBLIC_KEY_BYTES}-byte Ed25519 key, a minisign public key or an ssh-ed25519 public key, got ${bytes.length} bytes.`);
   }
-  return createPublicKey({
-    key: Buffer.concat([SPKI_PREFIX, bytes]),
-    format: "der",
-    type: "spki"
-  });
+  return createRawPublicKey(bytes);
 }
 function getPublicKey(privateKey) {
-  const der = createPublicKey(privateKey).export({
-    format: "der",
-    type: "spki"
-  });
-  return der.subarray(SPKI_PREFIX.length).toString("base64");
+  return getRawPublicKey(privateKey).toString("base64");
 }
 async function getFileDigest(path11) {
-  const hash = createHash2("sha384");
-  for await (const chunk of createReadStream2(path11)) {
-    hash.update(chunk);
-  }
-  return hash.digest();
+  return digestFile(path11, "sha384");
 }
 async function signFile(path11, privateKey) {
-  return sign(null, await getFileDigest(path11), privateKey).toString("base64");
+  return sign3(null, await getFileDigest(path11), privateKey).toString("base64");
 }
-async function writeSignature(path11, privateKey, force = false) {
-  const signaturePath = path11 + SIGNATURE_EXTENSION;
-  const signature = await signFile(path11, privateKey);
-  await writeFile3(signaturePath, signature + "\n", {
+async function verifyWordPressSignature(path11, signaturePath, publicKey) {
+  const digest = await getFileDigest(path11);
+  const signatures = (await readFile6(signaturePath, "utf8")).split("\n").map((line) => line.trim()).filter(Boolean);
+  return signatures.some((signature) => verify3(null, digest, publicKey, Buffer.from(signature, "base64")));
+}
+var DEFAULT_SIGNATURE_FORMAT = "wordpress";
+var SIGNATURE_FORMATS = {
+  wordpress: {
+    extension: SIGNATURE_EXTENSION,
+    create: async (path11, privateKey) => await signFile(path11, privateKey) + "\n",
+    verify: verifyWordPressSignature,
+    getPublicKey
+  },
+  minisign: {
+    extension: MINISIGN_EXTENSION,
+    create: createMinisignSignature,
+    verify: verifyMinisignSignature,
+    getPublicKey: getMinisignPublicKey
+  },
+  ssh: {
+    extension: SSH_SIGNATURE_EXTENSION,
+    create: createSshSignature,
+    verify: verifySshSignature,
+    getPublicKey: getSshPublicKey
+  }
+};
+function isSignatureFormat(value) {
+  return Object.hasOwn(SIGNATURE_FORMATS, value);
+}
+function getSignaturePath(path11, format = DEFAULT_SIGNATURE_FORMAT) {
+  return path11 + SIGNATURE_FORMATS[format].extension;
+}
+function getPublicKeys(key) {
+  return {
+    wordpress: SIGNATURE_FORMATS.wordpress.getPublicKey(key),
+    minisign: SIGNATURE_FORMATS.minisign.getPublicKey(key),
+    ssh: SIGNATURE_FORMATS.ssh.getPublicKey(key)
+  };
+}
+async function writeSignature(path11, privateKey, force = false, format = DEFAULT_SIGNATURE_FORMAT) {
+  const signaturePath = getSignaturePath(path11, format);
+  const signature = await SIGNATURE_FORMATS[format].create(path11, privateKey);
+  await writeFile3(signaturePath, signature, {
     flag: force ? "w" : "wx"
   }).catch((error) => {
     throw "EEXIST" === error.code ? new ValidationError(`${signaturePath} already exists, pass --force to overwrite it.`) : error;
   });
   return signaturePath;
 }
-async function verifyFileSignature(path11, signaturePath, publicKey) {
-  const digest = await getFileDigest(path11);
-  const signatures = (await readFile4(signaturePath, "utf8")).split("\n").map((line) => line.trim()).filter(Boolean);
-  return signatures.some((signature) => verify(null, digest, publicKey, Buffer.from(signature, "base64")));
+async function verifyFileSignature(path11, signaturePath, publicKey, format = DEFAULT_SIGNATURE_FORMAT) {
+  return SIGNATURE_FORMATS[format].verify(path11, signaturePath, publicKey);
 }
 
 // ../../js/wp-release/dist/commands/command.js
@@ -24807,7 +24996,7 @@ function ignoreOwnFile(rules, sourceDir, path11) {
   return rules;
 }
 function ignoreOwnSignature(rules, sourceDir, path11) {
-  return ignoreOwnFile(rules, sourceDir, path11 + SIGNATURE_EXTENSION);
+  return Object.values(SIGNATURE_FORMATS).reduce((matcher, { extension }) => ignoreOwnFile(matcher, sourceDir, path11 + extension), rules);
 }
 var sourceDirArgs = {
   "source-dir": { type: "string" }
@@ -24879,7 +25068,7 @@ always give the same ZIP.`,
   },
   async run({ values, positionals, cwd, logger: logger2 }) {
     const sourceDir = resolve5(cwd, getSourceDirArg(values, positionals));
-    const slug = getString(values, "slug") ?? basename2(cwd);
+    const slug = getString(values, "slug") ?? basename3(cwd);
     const force = getBoolean(values, "force");
     await checkDirectory(sourceDir);
     const meta = await readPackageMeta({ dir: sourceDir, slug });
@@ -24936,7 +25125,7 @@ always give the same ZIP.`,
 };
 
 // ../../js/wp-release/dist/commands/checksums.js
-import { basename as basename3, resolve as resolve6 } from "node:path";
+import { basename as basename4, resolve as resolve6 } from "node:path";
 var checksums_default = {
   name: "checksums",
   usage: "checksums [<source-dir>] [options]",
@@ -24978,7 +25167,7 @@ matches the ZIP contents.`,
   },
   async run({ values, positionals, cwd, logger: logger2 }) {
     const sourceDir = resolve6(cwd, getSourceDirArg(values, positionals));
-    const slug = getString(values, "slug") ?? basename3(cwd);
+    const slug = getString(values, "slug") ?? basename4(cwd);
     await checkDirectory(sourceDir);
     const meta = await readPackageMeta({ dir: sourceDir, slug });
     const version = getString(values, "version") ?? meta?.version ?? null;
@@ -25013,6 +25202,14 @@ matches the ZIP contents.`,
 // ../../js/wp-release/dist/commands/sign.js
 import { resolve as resolve7 } from "node:path";
 import { stat as stat3 } from "node:fs/promises";
+function parseSignatureFormats(values) {
+  const names = values.flatMap((value) => value.split(",")).map((name) => name.trim()).filter(Boolean);
+  const unknown = names.filter((name) => !isSignatureFormat(name));
+  if (unknown.length) {
+    throw new ValidationError(`Unknown signature format ${unknown.join(", ")}, use ${Object.keys(SIGNATURE_FORMATS).join(", ")}.`);
+  }
+  return names.length ? [...new Set(names.filter(isSignatureFormat))] : [DEFAULT_SIGNATURE_FORMAT];
+}
 var sign_default = {
   name: "sign",
   usage: "sign <file>... [options]",
@@ -25022,21 +25219,32 @@ var sign_default = {
                           manifest
 
 Options:
-  --force                 Overwrite existing .sig files
+  --format <names>        Signature formats to write, comma-separated or
+                          repeated, like wordpress,minisign,ssh (default:
+                          wordpress):
+                          wordpress  <file>.sig for WordPress core's
+                                     verify_file_signature()
+                          minisign   <file>.minisig for "minisign -V"
+                          ssh        <file>.sshsig for "ssh-keygen -Y verify"
+                                     with the "file" namespace
+  --force                 Overwrite existing signature files
 
 The signing key is read from the ${SIGNING_KEY_ENV} environment variable, as a
 base64 32-byte Ed25519 seed or 64-byte libsodium secret key. There's no flag
 for it, since it would show in the process list.
 
-The signature is the one WordPress core's verify_file_signature() checks: a
-base64 Ed25519 signature of the raw SHA-384 digest of the file. Sign both
-the ZIP and the checksums manifest. Use --verbose to print the public key
-that belongs to the signing key.`,
+The wordpress signature is the one WordPress core's verify_file_signature()
+checks: a base64 Ed25519 signature of the raw SHA-384 digest of the file.
+All formats are signed by the same key. Sign both the ZIP and the checksums
+manifest. Use --verbose to print the public key of the signing key in the
+form of each format.`,
   options: {
+    format: { type: "string", multiple: true },
     force: { type: "boolean" }
   },
   async run({ values, positionals, cwd, logger: logger2 }) {
     const encoded = process.env[SIGNING_KEY_ENV];
+    const formats = parseSignatureFormats(getStrings(values, "format"));
     if (!positionals.length) {
       throw new ValidationError("Pass the files to sign.");
     }
@@ -25045,22 +25253,25 @@ that belongs to the signing key.`,
     }
     const privateKey = parseSigningKey(encoded);
     const publicKey = getPublicKey(privateKey);
+    const publicKeys = getPublicKeys(privateKey);
     const paths = positionals.map((file) => resolve7(cwd, file));
     await Promise.all(paths.map(async (path11) => {
       if (!(await stat3(path11).catch(() => null))?.isFile()) {
         throw new ValidationError(`${path11} is not a file.`);
       }
     }));
-    logger2.debug(`Signing with the public key ${publicKey}.`);
+    formats.forEach((format) => logger2.debug(`Signing ${format} with the public key ${publicKeys[format]}.`));
     const signatures = [];
     const force = getBoolean(values, "force");
-    for (const path11 of paths) {
-      const signaturePath = await writeSignature(path11, privateKey, force);
+    const jobs = paths.flatMap((path11) => formats.map((format) => ({ path: path11, format })));
+    for (const { path: path11, format } of jobs) {
+      const signaturePath = await writeSignature(path11, privateKey, force, format);
       logger2.info(signaturePath);
       signatures.push(signaturePath);
     }
-    logger2.summary((context) => getSignSummary(context, { signatures, publicKey }));
-    return { exitCode: 0, result: { signatures, publicKey } };
+    const result = { signatures, formats, publicKey, publicKeys };
+    logger2.summary((context) => getSignSummary(context, result));
+    return { exitCode: 0, result };
   }
 };
 
@@ -25072,7 +25283,10 @@ var keygen_default = {
   help: `Generate a signing key pair for "wp-release sign" and "wp-release verify".
 
 The private seed is printed once as WP_RELEASE_SIGNING_KEY. Store it securely
-and never commit it or share it. The public key can be distributed to verifiers.`,
+and never commit it or share it. The public key can be distributed to verifiers.
+It's also printed as a minisign public key for "minisign -V -P" and as an
+ssh-ed25519 public key for the allowed_signers file of "ssh-keygen -Y verify",
+since the same key signs every format of "wp-release sign".`,
   options: {},
   async run({ values, logger: logger2 }) {
     if (getBoolean(values, "github-output")) {
@@ -25081,6 +25295,8 @@ and never commit it or share it. The public key can be distributed to verifiers.
     const result = generateSigningKeyPair();
     logger2.info(`WP_RELEASE_SIGNING_KEY=${result.privateKey}`);
     logger2.info(`Public key: ${result.publicKey}`);
+    logger2.info(`Minisign public key: ${result.publicKeys.minisign}`);
+    logger2.info(`SSH public key: ${result.publicKeys.ssh}`);
     logger2.info("Store the private seed securely; it cannot be recovered from the public key.");
     return { exitCode: 0, result };
   }
@@ -25088,9 +25304,9 @@ and never commit it or share it. The public key can be distributed to verifiers.
 
 // ../../js/wp-release/dist/commands/verify.js
 import { existsSync as existsSync4 } from "node:fs";
-import { mkdir as mkdir4, mkdtemp, readFile as readFile5, rm as rm3 } from "node:fs/promises";
+import { mkdir as mkdir4, mkdtemp, readFile as readFile7, rm as rm3 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename as basename4, isAbsolute as isAbsolute4, join as join6, posix as posix3, resolve as resolve8 } from "node:path";
+import { basename as basename5, isAbsolute as isAbsolute4, join as join6, posix as posix3, resolve as resolve8 } from "node:path";
 
 // ../../js/wp-release/dist/download.js
 import { createWriteStream as createWriteStream2 } from "node:fs";
@@ -25202,12 +25418,12 @@ function openReadStream(zip, entry) {
 }
 
 // ../../js/wp-release/dist/commands/verify.js
-async function checkSignature(checksumsPath, publicKey) {
-  const signaturePath = checksumsPath + SIGNATURE_EXTENSION;
+async function checkSignature(checksumsPath, publicKey, format) {
+  const signaturePath = getSignaturePath(checksumsPath, format);
   if (!existsSync4(signaturePath)) {
     throw new ValidationError(`${signaturePath} doesn't exist.`);
   }
-  if (!await verifyFileSignature(checksumsPath, signaturePath, parsePublicKey(publicKey))) {
+  if (!await verifyFileSignature(checksumsPath, signaturePath, parsePublicKey(publicKey), format)) {
     throw new ValidationError(`${signaturePath} isn't a valid signature of ${checksumsPath} for the public key.`);
   }
 }
@@ -25246,18 +25462,18 @@ async function resolveTarget(input2) {
   }
 }
 function getEmbeddedPath(checksumsPath, embedded) {
-  const path11 = posix3.normalize(embedded ?? basename4(checksumsPath));
+  const path11 = posix3.normalize(embedded ?? basename5(checksumsPath));
   if (embedded && (isAbsolute4(embedded) || embedded.includes("\\") || path11.startsWith("../") || [".", ".."].includes(path11))) {
     throw new ValidationError(`--embedded must be a path inside the plugin with forward slashes, got "${embedded}".`);
   }
   return embedded || path11.endsWith(".json") ? path11 : null;
 }
-function getCopyPairs(checksumsPath, path11) {
+function getCopyPairs(checksumsPath, path11, format) {
   return path11 ? [
     { original: checksumsPath, copy: path11 },
     {
-      original: checksumsPath + SIGNATURE_EXTENSION,
-      copy: path11 + SIGNATURE_EXTENSION
+      original: getSignaturePath(checksumsPath, format),
+      copy: getSignaturePath(path11, format)
     }
   ] : [];
 }
@@ -25272,11 +25488,11 @@ function checkExplicitPairs(pairs, manifest) {
   });
 }
 async function hasSameContents(original, file) {
-  return resolve8(original) === resolve8(file) || (await readFile5(original)).equals(await readFile5(file));
+  return resolve8(original) === resolve8(file) || (await readFile7(original)).equals(await readFile7(file));
 }
 async function checkEmbeddedCopies(input2) {
-  const { dir, manifest, checksumsPath, embedded } = input2;
-  const pairs = getCopyPairs(checksumsPath, getEmbeddedPath(checksumsPath, embedded));
+  const { dir, manifest, checksumsPath, embedded, format } = input2;
+  const pairs = getCopyPairs(checksumsPath, getEmbeddedPath(checksumsPath, embedded), format);
   if (embedded) {
     checkExplicitPairs(pairs, manifest);
   }
@@ -25325,13 +25541,14 @@ async function findVersionMismatch(dir, manifest) {
   return manifest.version && files && manifest.version !== files ? { manifest: manifest.version, files } : null;
 }
 async function verifyTarget(input2) {
-  const { target, manifest, checksumsPath, exclude, embedded, logger: logger2 } = input2;
+  const { target, manifest, checksumsPath, exclude, embedded, format, logger: logger2 } = input2;
   const { dir } = target;
   const copies = await checkEmbeddedCopies({
     dir,
     manifest,
     checksumsPath,
-    embedded
+    embedded,
+    format
   });
   const rules = ignoreOwnSignature(ignoreOwnFile(await loadFileRules({ exclude: parseExclude(exclude) }), dir, checksumsPath), dir, checksumsPath);
   copies.paths.forEach((copy) => ignoreOwnFile(rules, dir, join6(dir, copy)));
@@ -25387,17 +25604,25 @@ Options:
                           builds for a release, instead of <source-dir>
   --root-folder <name>    Folder in the ZIP (default: the one folder that
                           every entry is in)
-  --embedded <path>       Where the manifest and its .sig are shipped inside the
-                          files, like includes/checksums.json. Both the
-                          --checksums file and its .sig must exist, both
+  --embedded <path>       Where the manifest and its signature are shipped in
+                          the files, like includes/checksums.json. Both the
+                          --checksums file and its signature must exist, both
                           copies must be shipped, and they must be identical
                           to them. Without this option, a file with the name
-                          of the --checksums file at the root (and its .sig)
-                          is a copy only when it exists, the matching original
-                          exists and the manifest doesn't list it
-  --public-key <key>      Base64 Ed25519 public key. Checks <checksums>.sig, as
-                          written by "wp-release sign", before comparing any
-                          file, and fails when it's missing or invalid
+                          of the --checksums file at the root (and its
+                          signature) is a copy only when it exists, the
+                          matching original exists and the manifest doesn't
+                          list it
+  --public-key <key>      Ed25519 public key, as base64, a minisign public key
+                          or an ssh-ed25519 public key. Checks the signature
+                          of the manifest, as written by "wp-release sign",
+                          before comparing any file, and fails when it's
+                          missing or invalid
+  --signature-format <name>
+                          Format of the manifest signature: wordpress
+                          (<checksums>.sig), minisign (<checksums>.minisig)
+                          or ssh (<checksums>.sshsig) (default: wordpress).
+                          Also selects the signature copy for --embedded
   --exclude <patterns>    Gitignore-style patterns to skip in both the directory
                           and the manifest, comma-separated or repeated
 
@@ -25410,7 +25635,7 @@ Unlike "checksums" and "zip", verify doesn't read .distignore, so that an
 ignore file inside the checked directory can't hide added files. Use
 --exclude to skip files that aren't part of the release.
 
-A manifest can't list itself. A copy of the manifest and of its .sig inside
+A manifest can't list itself. A copy of the manifest and of its signature in
 the checked files is therefore skipped, but it must be identical to the
 --checksums file. A path that the manifest lists is never skipped, and a
 file that isn't a matching copy is reported as extra. See --embedded for
@@ -25421,6 +25646,7 @@ where the copies are looked for.`,
     "root-folder": { type: "string" },
     embedded: { type: "string" },
     "public-key": { type: "string" },
+    "signature-format": { type: "string" },
     ...sourceDirArgs,
     exclude: { type: "string", multiple: true }
   },
@@ -25436,8 +25662,12 @@ where the copies are looked for.`,
     }
     const checksumsPath = resolve8(cwd, checksums);
     const publicKey = getString(values, "public-key");
+    const format = getString(values, "signature-format") ?? DEFAULT_SIGNATURE_FORMAT;
+    if (!isSignatureFormat(format)) {
+      throw new ValidationError(`Unknown signature format ${format}, use ${Object.keys(SIGNATURE_FORMATS).join(", ")}.`);
+    }
     if (publicKey) {
-      await checkSignature(checksumsPath, publicKey);
+      await checkSignature(checksumsPath, publicKey, format);
       logger2.info(`Signature of ${checksumsPath} is valid.`);
     }
     const manifest = await readChecksums(checksumsPath);
@@ -25454,6 +25684,7 @@ where the copies are looked for.`,
         checksumsPath,
         exclude: getStrings(values, "exclude"),
         embedded: getString(values, "embedded"),
+        format,
         logger: logger2
       });
     } finally {
@@ -25463,11 +25694,11 @@ where the copies are looked for.`,
 };
 
 // ../../js/wp-release/dist/commands/version-check.js
-import { basename as basename5, resolve as resolve9 } from "node:path";
+import { basename as basename6, resolve as resolve9 } from "node:path";
 
 // ../../js/wp-release/dist/version-check.js
 var import_ignore2 = __toESM(require_ignore(), 1);
-import { readFile as readFile6 } from "node:fs/promises";
+import { readFile as readFile8 } from "node:fs/promises";
 import { join as join7 } from "node:path";
 var GIT_TAG_FORMAT = "{version}";
 var TAG_REF_PREFIX = "refs/tags/";
@@ -25537,7 +25768,7 @@ async function compareConstants(sourceDir, constants3, expected) {
   const files = constants3.length ? await selectFiles(sourceDir, (0, import_ignore2.default)().add(CONSTANT_SEARCH_IGNORE)) : [];
   const sources = await Promise.all(files.filter((file) => file.endsWith(".php")).map(async (file) => ({
     file,
-    contents: await readFile6(join7(sourceDir, file), "utf8")
+    contents: await readFile8(join7(sourceDir, file), "utf8")
   })));
   return constants3.flatMap((name) => {
     const source = `Constant ${name}`;
@@ -25606,7 +25837,7 @@ async function findVersionMismatches(input2) {
     checkStableTag && readme ? compareVersion({
       source: "Stable tag",
       file: readme.file,
-      line: findReadmeHeaderLine(await readFile6(join7(sourceDir, readme.file), "utf8"), "Stable tag"),
+      line: findReadmeHeaderLine(await readFile8(join7(sourceDir, readme.file), "utf8"), "Stable tag"),
       actual: readme.headers["Stable tag"] ?? null
     }, expected) : null,
     ...await compareConstants(sourceDir, constants3, expected),
@@ -25656,7 +25887,7 @@ no Stable tag, so it's only checked for plugins.`,
   },
   async run({ values, positionals, cwd, logger: logger2 }) {
     const sourceDir = resolve9(cwd, getSourceDirArg(values, positionals));
-    const slug = getString(values, "slug") ?? basename5(cwd);
+    const slug = getString(values, "slug") ?? basename6(cwd);
     await checkDirectory(sourceDir);
     const meta = await readPackageMeta({
       dir: sourceDir,
@@ -25949,10 +26180,10 @@ import { readdir as readdir4 } from "node:fs/promises";
 import path4 from "node:path";
 
 // ../../js/wp-release/dist/json-files.js
-import { readFile as readFile7 } from "node:fs/promises";
+import { readFile as readFile9 } from "node:fs/promises";
 async function readJson(file) {
   try {
-    return JSON.parse(await readFile7(file, "utf8"));
+    return JSON.parse(await readFile9(file, "utf8"));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new ValidationError(`Could not read JSON manifest ${file}: ${message}`);
@@ -25960,7 +26191,7 @@ async function readJson(file) {
 }
 async function readJsonIfExists(file) {
   try {
-    return JSON.parse(await readFile7(file, "utf8"));
+    return JSON.parse(await readFile9(file, "utf8"));
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -25970,7 +26201,7 @@ async function readJsonIfExists(file) {
 }
 
 // ../../js/wp-release/dist/version-files.js
-import { access as access3, readFile as readFile8, writeFile as writeFile4 } from "node:fs/promises";
+import { access as access3, readFile as readFile10, writeFile as writeFile4 } from "node:fs/promises";
 import path3 from "node:path";
 
 // ../../js/wp-release/dist/tag-format.js
@@ -26105,7 +26336,7 @@ async function readVersion(repository, directory, descriptor, relativePath, tagT
   }
   if ("php-constant" === descriptor.kind) {
     const file2 = path3.join(directory, descriptor.file);
-    const contents2 = await readFile8(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const versions = findConstantValues(contents2, descriptor.constant);
     if (versions[0]) {
       return versions[0];
@@ -26113,7 +26344,7 @@ async function readVersion(repository, directory, descriptor, relativePath, tagT
     throw new ValidationError(`Missing PHP constant ${descriptor.constant} in ${file2}.`);
   }
   const file = path3.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile8(file, "utf8");
+  const contents = await readFile10(file, "utf8");
   const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
   const match = new RegExp(`^\\s*\\*?\\s*${label}:\\s*([^\\r\\n]+)`, "im").exec(contents);
   if (!match) {
@@ -26124,7 +26355,7 @@ async function readVersion(repository, directory, descriptor, relativePath, tagT
 async function writeVersion(directory, descriptor, version, journal) {
   if ("package-json" === descriptor.kind || "composer-json" === descriptor.kind) {
     const file2 = path3.join(directory, descriptor.file);
-    const contents2 = await readFile8(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const manifest = JSON.parse(contents2);
     if ("composer-json" === descriptor.kind && descriptor.ifPresent && !Object.hasOwn(manifest, descriptor.field)) {
       return;
@@ -26137,7 +26368,7 @@ async function writeVersion(directory, descriptor, version, journal) {
   }
   if ("php-constant" === descriptor.kind) {
     const file2 = path3.join(directory, descriptor.file);
-    const contents2 = await readFile8(file2, "utf8");
+    const contents2 = await readFile10(file2, "utf8");
     const constant = escapeRegExp(descriptor.constant);
     const definePattern = new RegExp(`(\\bdefine\\s*\\(\\s*(['"])${constant}\\2\\s*,\\s*)(['"])(.*?)\\3`, "g");
     const declarationPattern = new RegExp(`(\\bconst\\s+${constant}\\s*=\\s*)(['"])(.*?)\\2`, "g");
@@ -26153,7 +26384,7 @@ async function writeVersion(directory, descriptor, version, journal) {
     return;
   }
   const file = path3.join(directory, await getVersionFile(directory, descriptor.kind, descriptor.file));
-  const contents = await readFile8(file, "utf8");
+  const contents = await readFile10(file, "utf8");
   const label = "wordpress-stable-tag" === descriptor.kind ? "Stable tag" : "Version";
   const expression = new RegExp(`(^\\s*\\*?\\s*${label}:\\s*)[^\\r\\n]+`, "im");
   if (!expression.test(contents)) {
@@ -27091,7 +27322,7 @@ var Svn = class {
 
 // ../../js/wp-release/dist/sync.js
 var import_ignore3 = __toESM(require_ignore(), 1);
-import { copyFile as copyFile2, mkdir as mkdir5, readdir as readdir5, readFile as readFile9, rm as rm4, rmdir as rmdir2, stat as stat4 } from "node:fs/promises";
+import { copyFile as copyFile2, mkdir as mkdir5, readdir as readdir5, readFile as readFile11, rm as rm4, rmdir as rmdir2, stat as stat4 } from "node:fs/promises";
 import { dirname as dirname3, join as join8 } from "node:path";
 var SVN_DIRECTORY = ".svn";
 async function isSameFile(source, target) {
@@ -27106,8 +27337,8 @@ async function isSameFile(source, target) {
     return false;
   }
   const [sourceContents, targetContents] = await Promise.all([
-    readFile9(source),
-    readFile9(target)
+    readFile11(source),
+    readFile11(target)
   ]);
   return sourceContents.equals(targetContents);
 }
@@ -28675,7 +28906,7 @@ ${legend}
 import path10 from "node:path";
 
 // ../../js/wp-release/dist/changelog.js
-import { readFile as readFile10, writeFile as writeFile5 } from "node:fs/promises";
+import { readFile as readFile12, writeFile as writeFile5 } from "node:fs/promises";
 import path7 from "node:path";
 async function getVersionedReleases(repository, config, releases, changesetDirectory) {
   const commits = /* @__PURE__ */ new Map();
@@ -28742,7 +28973,7 @@ ${release.changelog}
   const changelog = path7.join(directory, "CHANGELOG.md");
   let previous = "";
   try {
-    previous = await readFile10(changelog, "utf8");
+    previous = await readFile12(changelog, "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -28777,7 +29008,7 @@ ${release.changelog}
     let readmeAlreadyVersioned = false;
     for (const file of readme) {
       try {
-        const contents = await readFile10(file, "utf8");
+        const contents = await readFile12(file, "utf8");
         readmeFound = true;
         const defaultHeading = void 0 === changelogInsertAfter ? /^==\s*Changelog\s*==\s*$/im.exec(contents)?.[0] : void 0;
         const insertionMarker = changelogInsertAfter ?? defaultHeading;
@@ -28810,7 +29041,7 @@ ${summaries.map((item) => `* ${item.replaceAll(/\r?\n/g, "\n  ")}`).join("\n")}
 async function readChangelogSection(directory, version) {
   let contents = "";
   try {
-    contents = await readFile10(path7.join(directory, "CHANGELOG.md"), "utf8");
+    contents = await readFile12(path7.join(directory, "CHANGELOG.md"), "utf8");
   } catch (error) {
     if ("ENOENT" !== error.code) {
       throw error;
@@ -28827,7 +29058,7 @@ async function readChangelogSection(directory, version) {
 }
 async function getLatestChangelogVersion(directory, fallback) {
   try {
-    const contents = await readFile10(path7.join(directory, "CHANGELOG.md"), "utf8");
+    const contents = await readFile12(path7.join(directory, "CHANGELOG.md"), "utf8");
     const match = /^##\s+(\d+\.\d+\.\d+)(?:\s|$)/m.exec(contents);
     return match?.[1] ?? fallback;
   } catch (error) {
@@ -28851,7 +29082,7 @@ function insertAfterMarker(contents, marker, section, file) {
 // ../../js/wp-release/dist/changeset-dependents.js
 var import_satisfies = __toESM(require_satisfies(), 1);
 var import_valid = __toESM(require_valid(), 1);
-import { readFile as readFile11, writeFile as writeFile6 } from "node:fs/promises";
+import { readFile as readFile13, writeFile as writeFile6 } from "node:fs/promises";
 import path8 from "node:path";
 import { isDeepStrictEqual } from "node:util";
 var DEFAULT_SECTIONS = ["dependencies", "optionalDependencies"];
@@ -29044,7 +29275,7 @@ async function updateDependencyDeclaration(input2) {
     }
     const changed = void 0 !== nextSpec && nextSpec !== spec;
     if (changed) {
-      const contents = await readFile11(file, "utf8");
+      const contents = await readFile13(file, "utf8");
       const declared = new RegExp(`"${escapeRegExp(name)}"\\s*:\\s*"${escapeRegExp(spec)}"`);
       if (!declared.test(contents)) {
         throw new ValidationError(`The dependency spec of "${name}" in ${dependent.name}'s ${file} doesn't match "${spec}"; rewrite it to "${nextSpec}".`);
@@ -29162,7 +29393,7 @@ function isExcludedDependent(dependent, rule) {
 
 // ../../js/wp-release/dist/changeset-files.js
 import { randomUUID as randomUUID2 } from "node:crypto";
-import { access as access4, mkdir as mkdir7, readdir as readdir6, readFile as readFile12, rm as rm7, writeFile as writeFile7 } from "node:fs/promises";
+import { access as access4, mkdir as mkdir7, readdir as readdir6, readFile as readFile14, rm as rm7, writeFile as writeFile7 } from "node:fs/promises";
 import path9 from "node:path";
 async function readChangesets(directory) {
   let entries;
@@ -29174,7 +29405,7 @@ async function readChangesets(directory) {
     }
     throw error;
   }
-  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile12(path9.join(directory, name), "utf8"), name)));
+  return Promise.all(entries.filter((name) => name.endsWith(".md") && !name.startsWith("README")).sort().map(async (name) => parseChangeset(await readFile14(path9.join(directory, name), "utf8"), name)));
 }
 async function readChangesetsSince(repository, directory, changesets, since, uncommitted = false) {
   const relativeDirectory = repository.relativePath(directory);
@@ -29224,7 +29455,7 @@ async function consumeChangeset(file, changeset, applied, journal) {
 }
 
 // ../../js/wp-release/dist/file-journal.js
-import { readFile as readFile13, rm as rm8, writeFile as writeFile8 } from "node:fs/promises";
+import { readFile as readFile15, rm as rm8, writeFile as writeFile8 } from "node:fs/promises";
 var FileJournal = class {
   /** Original contents by file, undefined for files that didn't exist. */
   files = /* @__PURE__ */ new Map();
@@ -29239,7 +29470,7 @@ var FileJournal = class {
       return;
     }
     try {
-      this.files.set(file, await readFile13(file, "utf8"));
+      this.files.set(file, await readFile15(file, "utf8"));
     } catch (error) {
       if ("ENOENT" !== error.code) {
         throw error;
