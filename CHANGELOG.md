@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 (2026-10-13)
+
+- Bundle wp-release 0.17.0.
+
 ## 0.4.0 (2026-10-13)
 
 - Make ZIP and manifest signing independent: --sign signs only ZIPs, --sign-checksums generates and signs manifests for ZIPs and directory builds, and --sign-format requires an explicit signing target. Update the ZIP Action and release examples. ([`e515a53`](https://github.com/wpelevator/basement/commit/e515a537ddb1b08a5b5839e81eb492f47f55911e))
