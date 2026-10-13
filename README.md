@@ -4,11 +4,11 @@
 
 GitHub Action that writes a checksums manifest of a WordPress plugin or theme using [`@wpelevator/wp-release`](https://www.npmjs.com/package/@wpelevator/wp-release). It's named after the [`wp-release checksums`](https://www.npmjs.com/package/@wpelevator/wp-release#checksums) command that it runs.
 
-**Status:** first release (0.x). Boolean inputs must be `true` or `false`; anything else fails the run.
-
 The manifest lists the MD5 and SHA-256 hash of every distributed file in the format of the WordPress.org plugin checksums API, with paths relative to the plugin or theme folder. Because it lists the files and not the ZIP, it stays valid for the GitHub release ZIP, the ZIP that WordPress.org builds from SVN and an installed copy. To get one together with the ZIP, use the `checksums` input of [`wp-release-zip`](https://github.com/wpelevator/wp-release-zip) instead, so that both select the same files. [`wp-release-sign`](https://github.com/wpelevator/wp-release-sign) signs the manifest so that it can be trusted.
 
 ## Usage
+
+Use `true` or `false` for boolean inputs; the action validates these values before running the command.
 
 These actions require a runner with the Node.js 24 action runtime. Keep self-hosted runners updated before using them.
 
