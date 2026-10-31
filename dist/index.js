@@ -86835,6 +86835,11 @@ function getPlaceholders(text) {
 }
 
 // ../../js/wp-gettext/dist/options.js
+var I18N_LOCATIONS = [
+  "full",
+  "file",
+  "never"
+];
 var DEFAULT_I18N_INCLUDE = [
   "**/*.{php,js,jsx,ts,tsx,mjs,cjs,mts,cts}",
   "**/block.json",
@@ -86871,6 +86876,7 @@ function validateI18nOptions(input2, label = "i18n") {
     "destination",
     "headers",
     "fileComment",
+    "location",
     "references",
     "strict",
     "legacyGlobals",
@@ -86891,6 +86897,9 @@ function validateI18nOptions(input2, label = "i18n") {
     if (void 0 !== options2[key] && "boolean" !== typeof options2[key]) {
       throw new GettextError("ERR_INVALID_I18N_OPTIONS", `${label}.${key} must be a boolean.`);
     }
+  }
+  if (void 0 !== options2.location && !I18N_LOCATIONS.includes(options2.location)) {
+    throw new GettextError("ERR_INVALID_I18N_OPTIONS", `${label}.location must be one of ${I18N_LOCATIONS.join(", ")}.`);
   }
   for (const key of ["domain", "destination"]) {
     if (void 0 !== options2[key] && ("string" !== typeof options2[key] || !options2[key]?.trim())) {
@@ -86928,7 +86937,7 @@ function resolveI18nOptions(...layers) {
     enabled: true,
     include: DEFAULT_I18N_INCLUDE,
     exclude: DEFAULT_I18N_EXCLUDE,
-    references: true,
+    location: "full",
     legacyGlobals: true
   };
   for (const layer of layers) {
@@ -86937,11 +86946,21 @@ function resolveI18nOptions(...layers) {
       options2 = {
         ...options2,
         ...layer,
+        location: resolveI18nLocation(layer) ?? options2.location,
         headers: mergeI18nHeaders(options2.headers, layer.headers)
       };
     }
   }
   return options2;
+}
+function resolveI18nLocation(options2) {
+  if (void 0 !== options2.location) {
+    return options2.location;
+  }
+  if (void 0 === options2.references) {
+    return void 0;
+  }
+  return options2.references ? "full" : "never";
 }
 function mergeI18nHeaders(...layers) {
   const headers = /* @__PURE__ */ new Map();
@@ -90728,7 +90747,8 @@ function serializePot(catalog, options2 = {}) {
   }
   const fileComment = void 0 === options2.fileComment ? "" : options2.fileComment.split(/\r\n|\r|\n/).map((line) => `# ${line}
 `).join("");
-  const entries = catalog.messages.map((message2) => serializeMessage(message2, false !== options2.references));
+  const location = resolveI18nLocation(options2) ?? "full";
+  const entries = catalog.messages.map((message2) => serializeMessage(message2, location));
   return Buffer.from(fileComment + [serializeHeaders(catalog), ...entries].join("\n"));
 }
 function serializeHeaders(catalog) {
@@ -90751,11 +90771,11 @@ function serializeHeaders(catalog) {
 msgstr ""
 ${headers.join("")}`;
 }
-function serializeMessage(message2, references) {
+function serializeMessage(message2, location) {
   const lines = [
     ...message2.comments.flatMap((comment) => comment.split(/\r\n|\r|\n/).map((line) => `#. ${line}`)),
-    ...references ? [
-      ...new Set(message2.references.map((reference) => `#: ${reference.file}${reference.line ? `:${reference.line}` : ""}`))
+    ..."never" !== location ? [
+      ...new Set(message2.references.map((reference) => `#: ${reference.file}${"full" === location && reference.line ? `:${reference.line}` : ""}`))
     ] : [],
     ...message2.flags.length ? [`#, ${message2.flags.join(", ")}`] : [],
     ...void 0 !== message2.context ? [poString("msgctxt", message2.context)] : [],
@@ -92886,6 +92906,18 @@ async function resolveI18nPackages(input2) {
 }
 
 // ../../js/wp-release/dist/commands/i18n.js
+var LOCATIONS = ["full", "file", "never"];
+function cliLocation(values) {
+  const mode = getString(values, "add-location");
+  const omitted = getBoolean(values, "no-location") || getBoolean(values, "no-references");
+  if (void 0 !== mode && !LOCATIONS.includes(mode)) {
+    throw new ValidationError(`--add-location must be one of ${LOCATIONS.join(", ")}.`);
+  }
+  if (void 0 !== mode && omitted) {
+    throw new ValidationError("--add-location cannot be combined with --no-location or --no-references.");
+  }
+  return omitted ? "never" : mode;
+}
 function cliOptions(values) {
   const headers = {};
   for (const header of getStrings(values, "header")) {
@@ -92902,6 +92934,7 @@ function cliOptions(values) {
   const domain = getString(values, "domain");
   const destination = getString(values, "destination");
   const fileComment = getString(values, "file-comment");
+  const location = cliLocation(values);
   return {
     ...void 0 !== domain ? { domain } : {},
     ...void 0 !== destination ? { destination } : {},
@@ -92911,7 +92944,7 @@ function cliOptions(values) {
     ...values.suppress ? { suppress: getStrings(values, "suppress") } : {},
     ...getBoolean(values, "strict") ? { strict: true } : {},
     ...getBoolean(values, "all-domains") ? { allDomains: true } : {},
-    ...getBoolean(values, "no-references") ? { references: false } : {},
+    ...void 0 !== location ? { location } : {},
     ...getBoolean(values, "no-legacy-globals") ? { legacyGlobals: false } : {},
     ...Object.keys(headers).length ? { headers } : {}
   };
@@ -92942,7 +92975,8 @@ function createI18nCommand(operation) {
   --destination <dir>    Package-relative POT directory
   --header <NAME=VALUE>  Repeatable gettext header override; NAME alone removes it
 ${"pot" === operation ? "  --file-comment <text>  Static comment prepended to the POT\n" : ""}
-  --no-references        Omit source references
+  --add-location <mode>  Source references: full (file:line, default), file or never
+  --no-location          Omit source references, like --add-location never
   --no-legacy-globals    JS requires imports or wp.i18n calls
   --strict               Warnings fail with exit code 2
 ${"pot" === operation ? "  --output <file.pot>    Explicit output relative to cwd; one package only\n  --check                Compare bytes without writing" : "  --suppress <code>      Repeatable audit finding codes to suppress"}
@@ -92959,6 +92993,8 @@ Each package writes atomically; a multi-package run is not a transaction.`,
       exclude: { type: "string", multiple: true },
       destination: { type: "string" },
       header: { type: "string", multiple: true },
+      "add-location": { type: "string" },
+      "no-location": { type: "boolean" },
       "no-references": { type: "boolean" },
       "no-legacy-globals": { type: "boolean" },
       strict: { type: "boolean" },
